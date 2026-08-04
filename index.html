@@ -10,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="מארגן טיולים">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1d4ed8">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231d4ed8'/%3E%3Ctext x='50' y='64' font-size='55' text-anchor='middle'%3E%E2%9C%88%EF%B8%8F%3C/text%3E%3C/svg%3E">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231d4ed8'/%3E%3Ctext x='50' y='64' font-size='55' text-anchor='middle'%3E%E2%9C%88%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <meta name="theme-color" content="#d4a017">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <style>
@@ -282,6 +282,29 @@
             margin-top: 8px;
         }
 
+        .hint { font-size: 0.85em; color: #64748b; }
+
+        .invoice-card {
+            background: #ffffff;
+            border: 2px solid var(--accent-purple);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 14px;
+        }
+        .invoice-card img { max-width: 100%; border-radius: 8px; margin-bottom: 10px; display: block; }
+        .invoice-answer { white-space: pre-wrap; line-height: 1.5; font-size: 0.95em; }
+        .invoice-loading { color: #64748b; font-style: italic; }
+        .invoice-error { color: var(--danger); font-weight: bold; }
+        .invoice-disclaimer {
+            font-size: 0.78em;
+            color: #92400e;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-top: 10px;
+        }
+
         @media print {
             body { background: white; padding: 0; font-size: 14pt; }
             .container { display: block; }
@@ -292,7 +315,7 @@
 </head>
 <body>
 
-<h1>✈️ מארגן הטיולים שלי</h1>
+<h1><img src="logo.png" alt="לוגו" style="height:1.3em; vertical-align:middle; margin-left:8px;">✈️ מארגן הטיולים שלי</h1>
 
 <!-- סרגל זיהוי משתמש -->
 <div class="user-bar">
@@ -481,6 +504,21 @@
             <button id="mapSearchBtn" class="btn-main" style="padding:12px; background-color:var(--accent-blue);" onclick="searchOnMap()">🔍 חפש במפה</button>
             <div id="map"></div>
         </div>
+
+        <div class="card">
+            <h2>שלב 6: סריקת חשבונית להערכת החזר מס (Tax Free) 🧾</h2>
+            <p class="hint" style="margin-top:-6px;">צלמו או העלו חשבונית/קבלה מחנות - הכלי יקרא אותה, יבדוק ברשת את חוקי החזר המע"מ העדכניים במדינה, ויעריך את סכום ההחזר האפשרי.</p>
+            <div class="form-group">
+                <label>תמונת חשבונית:</label>
+                <input type="file" id="invoiceFile" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>מדינת הרכישה:</label>
+                <input type="text" id="invoiceCountry" placeholder="לדוגמה: Georgia / France / Turkey">
+            </div>
+            <button class="btn-main" style="background-color:var(--accent-purple);" onclick="scanInvoice()">🔍 סרוק והערך החזר</button>
+            <div id="invoiceResults"></div>
+        </div>
     </div>
 
 </div>
@@ -628,6 +666,106 @@
         } catch (e) {
             return null;
         }
+    }
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function escapeHtmlInvoice(str) {
+        const div = document.createElement('div');
+        div.innerText = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    // סורק תמונת חשבונית/קבלה: קורא אותה עם יכולת ראייה, מחפש ברשת את חוקי החזר המע"מ העדכניים
+    // למדינה שצוינה, ומחזיר הערכה - כל זה בקריאה אחת שמשלבת ראייה + חיפוש אינטרנט.
+    async function scanInvoice() {
+        const fileInput = document.getElementById('invoiceFile');
+        const country = document.getElementById('invoiceCountry').value.trim() || document.getElementById('destination').value.trim();
+        const resultsBox = document.getElementById('invoiceResults');
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('נא לבחור תמונה של חשבונית/קבלה קודם');
+            return;
+        }
+        if (!country) {
+            alert('נא לציין את מדינת הרכישה (או למלא יעד בשלב 1)');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const loadingId = 'invoice-' + Date.now();
+
+        const card = document.createElement('div');
+        card.className = 'invoice-card';
+        card.id = loadingId;
+        const imgUrl = URL.createObjectURL(file);
+        card.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-loading">🔄 קורא את החשבונית ובודק חוקי החזר מס עדכניים ל-${escapeHtmlInvoice(country)}...</div>`;
+        resultsBox.prepend(card);
+
+        try {
+            const base64 = await fileToBase64(file);
+            const mediaType = file.type || 'image/jpeg';
+
+            const prompt = `זוהי תמונה של חשבונית/קבלה מרכישה ב-${country}. בצע את הפעולות הבאות:
+1. קרא מהתמונה: שם העסק, הסכום הכולל, המטבע, ותאריך אם קיים.
+2. חפש ברשת את שיעור המע"מ הנוכחי ואת כללי החזר המס לתיירים (Tax Free) הרלוונטיים והעדכניים ב-${country} - כולל סכום רכישה מינימלי לזכאות, אחוז ההחזר בפועל אחרי עמלות טיפול, ותנאים חשובים (כמו צורך בהיותך תושב חוץ, ייצוא הטובין בפרק זמן מסוים, שהחזר תקף רק על מוצרים ולא שירותים וכו').
+3. חשב הערכת סכום החזר עבור החשבונית הספציפית הזו.
+
+ענה בעברית בפורמט הבא בדיוק, בלי הקדמות:
+🧾 [שם העסק] - [סכום][מטבע]
+מדינה: ${country}
+שיעור מע"מ: [X%]
+הערכת החזר: [סכום משוער]
+תנאים חשובים: [רשימה קצרה]
+אם לא הצלחת לקרוא פרט מהתמונה בבירור, ציין זאת במפורש במקום לנחש.`;
+
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-6",
+                    max_tokens: 700,
+                    messages: [{
+                        role: "user",
+                        content: [
+                            { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+                            { type: "text", text: prompt }
+                        ]
+                    }],
+                    tools: [{ type: "web_search_20250305", name: "web_search" }]
+                })
+            });
+            const data = await response.json();
+            const answer = (data.content || [])
+                .filter(b => b.type === 'text')
+                .map(b => b.text)
+                .join('\n')
+                .trim();
+
+            const cardEl = document.getElementById(loadingId);
+            if (cardEl) {
+                cardEl.innerHTML = `
+                    <img src="${imgUrl}" alt="חשבונית">
+                    <div class="invoice-answer">${answer ? escapeHtmlInvoice(answer) : 'לא התקבלה תשובה ברורה. נסה/י שוב עם תמונה ברורה יותר.'}</div>
+                    <div class="invoice-disclaimer">⚠️ זו הערכה בלבד, המבוססת על קריאת AI של התמונה וחיפוש רשת - לא אישור רשמי. יש לוודא זכאות ותנאים מדויקים מול חנות ה-Tax Free או רשות המכס בפועל, ולשמור את כל הקבלות המקוריות.</div>
+                    <button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>
+                `;
+            }
+        } catch (err) {
+            const cardEl = document.getElementById(loadingId);
+            if (cardEl) {
+                cardEl.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-error">⚠️ שגיאה בקריאת החשבונית או בחיפוש ברשת. בדוק/י חיבור לאינטרנט ונסה/י שוב.</div>`;
+            }
+        }
+
+        fileInput.value = '';
     }
 
     function geocodeOnce(query) {
