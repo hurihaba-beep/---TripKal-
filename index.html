@@ -510,8 +510,8 @@
 
         <div class="card">
             <h2>שלב 6: סריקת חשבונית להערכת החזר מס (Tax Free) 🧾</h2>
-            <p class="hint" style="margin-top:-6px;">צלמו או העלו חשבונית/קבלה מחנות - הכלי יקרא אותה, יבדוק ברשת את חוקי החזר המע"מ העדכניים במדינה, ויעריך את סכום ההחזר האפשרי.</p>
-            <div class="invoice-disclaimer" style="margin-bottom:12px;">ℹ️ תכונה זו פועלת רק כשהכלי נטען בתוך הצ'אט של Claude.ai. אם אתה משתמש/ת בגרסה המתארחת (GitHub Pages וכו'), התכונה הזו לא תעבוד - אבל אפשר פשוט להעלות את תמונת החשבונית ישירות לצ'אט עם Claude במקום.</div>
+            <p class="hint" style="margin-top:-6px;">צלמו או העלו חשבונית/קבלה - הכלי יקרא את הטקסט מהתמונה (OCR חינמי, רץ בדפדפן) ויעריך החזר מס לפי טבלת שיעורי מע"מ קבועה.</p>
+            <div class="invoice-disclaimer" style="margin-bottom:12px;">ℹ️ זו גרסה חינמית שרצה כולה בדפדפן (בלי לשלוח שום מידע לשרת חיצוני) - עובדת גם באתר החי וגם כאן בצ'אט. הדיוק תלוי באיכות התמונה ובעדכניות טבלת המע"מ הפנימית - תמיד אפשר לתקן ידנית את הסכום שזוהה לפני החישוב.</div>
             <div class="form-group">
                 <label>תמונת חשבונית:</label>
                 <input type="file" id="invoiceFile" accept="image/*">
@@ -688,106 +688,173 @@
         return div.innerHTML;
     }
 
-    // סורק תמונת חשבונית/קבלה: קורא אותה עם יכולת ראייה, מחפש ברשת את חוקי החזר המע"מ העדכניים
-    // למדינה שצוינה, ומחזיר הערכה - כל זה בקריאה אחת שמשלבת ראייה + חיפוש אינטרנט.
+    // טבלת שיעורי מע"מ משוערת + הערות זכאות למדינות נפוצות. ערכים סטטיים - עלולים להתיישן עם הזמן, לא מקור רשמי.
+    const COUNTRY_VAT_TABLE = {
+        'georgia': { rate: 18, he: 'ג\'ורג\'יה', note: 'קיימת תוכנית Tax Free לתיירים על רכישות מעל סכום מינימלי מסוים. יש לבדוק תנאים בחנות בזמן הרכישה.' },
+        'turkey': { rate: 20, he: 'טורקיה', note: 'קיימת תוכנית Tax Free לתיירי חוץ בחנויות מסומנות, בכפוף לסכום רכישה מינימלי.' },
+        'france': { rate: 20, he: 'צרפת', note: 'תוכנית Tax Free אירופאית סטנדרטית - בדרך כלל דורשת רכישה של כ-100 יורו ומעלה בחנות אחת, ותושבות מחוץ לאיחוד האירופי.' },
+        'germany': { rate: 19, he: 'גרמניה', note: 'תוכנית Tax Free אירופאית סטנדרטית, לתושבי חוץ לאיחוד האירופי, בכפוף לסכום רכישה מינימלי.' },
+        'italy': { rate: 22, he: 'איטליה', note: 'תוכנית Tax Free אירופאית סטנדרטית, סכום מינימלי לרכישה כ-70 יורו (משתנה).' },
+        'spain': { rate: 21, he: 'ספרד', note: 'תוכנית Tax Free אירופאית סטנדרטית, ללא סכום מינימום רשמי אך מומלץ לבדוק בחנות.' },
+        'greece': { rate: 24, he: 'יוון', note: 'תוכנית Tax Free אירופאית סטנדרטית, סכום רכישה מינימלי כ-50 יורו.' },
+        'portugal': { rate: 23, he: 'פורטוגל', note: 'תוכנית Tax Free אירופאית סטנדרטית.' },
+        'netherlands': { rate: 21, he: 'הולנד', note: 'תוכנית Tax Free אירופאית סטנדרטית, סכום מינימלי כ-50 יורו.' },
+        'switzerland': { rate: 8.1, he: 'שווייץ', note: 'לא באיחוד האירופי - תוכנית Tax Free נפרדת משלה, סכום מינימלי כ-300 פרנק.' },
+        'uae': { rate: 5, he: 'איחוד האמירויות', note: 'תוכנית Tax Free דיגיטלית (Planet) בחנויות רשומות, סכום מינימלי נמוך יחסית.' },
+        'thailand': { rate: 7, he: 'תאילנד', note: 'תוכנית VAT Refund בחנויות מסומנות "VAT Refund for Tourists", סכום מינימלי לרכישה בודדת וכולל.' },
+        'japan': { rate: 10, he: 'יפן', note: 'תוכנית Tax-Free בחנויות מסומנות, דורשת דרכון בזמן הרכישה, סכום מינימלי כ-5,000 ין.' },
+        'south korea': { rate: 10, he: 'דרום קוריאה', note: 'תוכנית Tax Free (למשל Global Blue), סכום מינימלי לרכישה.' },
+        'israel': { rate: 18, he: 'ישראל', note: '⚠️ ברוב המקרים אין תוכנית החזר מע"מ לתיירים על קניות רגילות בחנויות בישראל - זה שונה ממדינות אחרות ברשימה. יש הסדרי ייצוא מיוחדים לרכישות גדולות מסוימות בשדה התעופה בלבד.' },
+        'united kingdom': { rate: 20, he: 'בריטניה', note: '⚠️ תוכנית ה-Tax Free לתיירים בוטלה בבריטניה בשנת 2021 - כרגע אין החזר מע"מ סטנדרטי על קניות בחנויות.' },
+        'uk': { rate: 20, he: 'בריטניה', note: '⚠️ תוכנית ה-Tax Free לתיירים בוטלה בבריטניה בשנת 2021 - כרגע אין החזר מע"מ סטנדרטי על קניות בחנויות.' }
+    };
+
+    function lookupCountryVat(countryRaw) {
+        const key = countryRaw.trim().toLowerCase();
+        if (COUNTRY_VAT_TABLE[key]) return COUNTRY_VAT_TABLE[key];
+        // ניסיון התאמה לפי שם בעברית או התאמה חלקית
+        for (const k in COUNTRY_VAT_TABLE) {
+            const entry = COUNTRY_VAT_TABLE[k];
+            if (entry.he === countryRaw.trim() || key.includes(k) || k.includes(key)) return entry;
+        }
+        return null;
+    }
+
+    // מנחש את הסכום הכולל מתוך טקסט שנקרא ב-OCR: מחפש שורות עם מילות מפתח כמו "לתשלום"/"total",
+    // ואם לא נמצא - נופל חזרה למספר העשרוני הגדול ביותר שנמצא בטקסט (לרוב זה הסכום הכולל בקבלות).
+    function guessTotalFromText(text) {
+        const lines = text.split('\n');
+        const keywords = ['לתשלום', 'total', 'סה"כ', 'סהכ', 'grand total', 'amount due'];
+        for (const line of lines) {
+            const lower = line.toLowerCase();
+            if (keywords.some(k => lower.includes(k.toLowerCase()))) {
+                const nums = line.match(/\d+[.,]\d{2}/g);
+                if (nums && nums.length) return parseFloat(nums[nums.length - 1].replace(',', '.'));
+            }
+        }
+        const allNums = (text.match(/\d+[.,]\d{2}/g) || []).map(n => parseFloat(n.replace(',', '.')));
+        if (allNums.length) return Math.max(...allNums);
+        return null;
+    }
+
+    async function ensureTesseractLoaded() {
+        if (window.Tesseract) return true;
+        const sources = [
+            'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js',
+            'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js'
+        ];
+        for (const src of sources) {
+            try {
+                await loadScript(src);
+                if (window.Tesseract) return true;
+            } catch (e) { /* ננסה את המקור הבא */ }
+        }
+        return false;
+    }
+
+    // גרסה חינמית: קריאת טקסט מהתמונה (OCR) שרצה כולה בדפדפן שלך - שום דבר לא נשלח לשרת חיצוני.
+    // משלבת עם טבלת שיעורי מע"מ קבועה בקוד (לא חיפוש רשת חי) כדי לחשב הערכת החזר.
     async function scanInvoice() {
         const fileInput = document.getElementById('invoiceFile');
-        const country = document.getElementById('invoiceCountry').value.trim() || document.getElementById('destination').value.trim();
+        const countryInput = document.getElementById('invoiceCountry').value.trim() || document.getElementById('destination').value.trim();
         const resultsBox = document.getElementById('invoiceResults');
 
         if (!fileInput.files || fileInput.files.length === 0) {
             alert('נא לבחור תמונה של חשבונית/קבלה קודם');
             return;
         }
-        if (!country) {
+        if (!countryInput) {
             alert('נא לציין את מדינת הרכישה (או למלא יעד בשלב 1)');
             return;
         }
 
         const file = fileInput.files[0];
-        const loadingId = 'invoice-' + Date.now();
+        const cardId = 'invoice-' + Date.now();
+        const imgUrl = URL.createObjectURL(file);
 
         const card = document.createElement('div');
         card.className = 'invoice-card';
-        card.id = loadingId;
-        const imgUrl = URL.createObjectURL(file);
-        card.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-loading">🔄 קורא את החשבונית ובודק חוקי החזר מס עדכניים ל-${escapeHtmlInvoice(country)}...</div><button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>`;
+        card.id = cardId;
+        card.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-loading">🔄 טוען מנוע קריאת טקסט (בפעם הראשונה זה עשוי לקחת דקה)...</div><button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>`;
         resultsBox.prepend(card);
 
-        try {
-            const base64 = await fileToBase64(file);
-            const mediaType = file.type || 'image/jpeg';
+        const loaded = await ensureTesseractLoaded();
+        const cardEl = document.getElementById(cardId);
+        if (!cardEl) { fileInput.value = ''; return; }
 
-            const prompt = `זוהי תמונה של חשבונית/קבלה מרכישה ב-${country}. בצע את הפעולות הבאות:
-1. קרא מהתמונה: שם העסק, הסכום הכולל, המטבע, ותאריך אם קיים.
-2. חפש ברשת את שיעור המע"מ הנוכחי ואת כללי החזר המס לתיירים (Tax Free) הרלוונטיים והעדכניים ב-${country} - כולל סכום רכישה מינימלי לזכאות, אחוז ההחזר בפועל אחרי עמלות טיפול, ותנאים חשובים (כמו צורך בהיותך תושב חוץ, ייצוא הטובין בפרק זמן מסוים, שהחזר תקף רק על מוצרים ולא שירותים וכו').
-3. חשב הערכת סכום החזר עבור החשבונית הספציפית הזו.
-
-ענה בעברית בפורמט הבא בדיוק, בלי הקדמות:
-🧾 [שם העסק] - [סכום][מטבע]
-מדינה: ${country}
-שיעור מע"מ: [X%]
-הערכת החזר: [סכום משוער]
-תנאים חשובים: [רשימה קצרה]
-אם לא הצלחת לקרוא פרט מהתמונה בבירור, ציין זאת במפורש במקום לנחש.`;
-
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: "claude-sonnet-4-6",
-                    max_tokens: 700,
-                    messages: [{
-                        role: "user",
-                        content: [
-                            { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-                            { type: "text", text: prompt }
-                        ]
-                    }],
-                    tools: [{ type: "web_search_20250305", name: "web_search" }]
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('api-unavailable');
-            }
-
-            const data = await response.json();
-            if (data.error) {
-                throw new Error('api-unavailable');
-            }
-
-            const answer = (data.content || [])
-                .filter(b => b.type === 'text')
-                .map(b => b.text)
-                .join('\n')
-                .trim();
-
-            const cardEl = document.getElementById(loadingId);
-            if (cardEl) {
-                cardEl.innerHTML = `
-                    <img src="${imgUrl}" alt="חשבונית">
-                    <div class="invoice-answer">${answer ? escapeHtmlInvoice(answer) : 'לא התקבלה תשובה ברורה. נסה/י שוב עם תמונה ברורה יותר.'}</div>
-                    <div class="invoice-disclaimer">⚠️ זו הערכה בלבד, המבוססת על קריאת AI של התמונה וחיפוש רשת - לא אישור רשמי. יש לוודא זכאות ותנאים מדויקים מול חנות ה-Tax Free או רשות המכס בפועל, ולשמור את כל הקבלות המקוריות.</div>
-                    <button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>
-                `;
-            }
-        } catch (err) {
-            const cardEl = document.getElementById(loadingId);
-            if (cardEl) {
-                cardEl.innerHTML = `
-                    <img src="${imgUrl}" alt="חשבונית">
-                    <div class="invoice-error">⚠️ התכונה הזו לא זמינה כרגע באתר הזה.</div>
-                    <div class="invoice-disclaimer">
-                        סריקת חשבוניות מבוססת על קריאה ל-AI (ראייה + חיפוש רשת), וזו יכולת שזמינה רק כשהכלי רץ <b>בתוך הצ'אט של Claude.ai</b> - לא באתר חיצוני מתארח כמו GitHub Pages, כי שם אין מפתח API שמאפשר את הקריאה.<br><br>
-                        <b>מה כן אפשר לעשות:</b> פשוט העלה/י את תמונת החשבונית ישירות לצ'אט עם Claude ותבקש/י ממנו לנתח אותה - זה יעבוד מצוין. שאר הכלי (תקציב, פריטים, מפה) ימשיך לעבוד רגיל באתר החיצוני, רק התכונה הזו הספציפית תלויה בסביבת הצ'אט.
-                    </div>
-                    <button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>
-                `;
-            }
+        if (!loaded) {
+            cardEl.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-error">⚠️ לא ניתן היה לטעון את מנוע קריאת הטקסט (חסימת רשת). נסה/י שוב מאוחר יותר.</div><button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>`;
+            fileInput.value = '';
+            return;
         }
 
+        const loadingDiv = cardEl.querySelector('.invoice-loading');
+        if (loadingDiv) loadingDiv.textContent = '🔄 קורא טקסט מהתמונה (OCR)... זה יכול לקחת עד כדקה.';
+
+        let ocrText = '';
+        try {
+            const result = await Tesseract.recognize(file, 'heb+eng');
+            ocrText = (result && result.data && result.data.text) ? result.data.text : '';
+        } catch (e) {
+            ocrText = '';
+        }
+
+        const guessedTotal = guessTotalFromText(ocrText);
+        const vatInfo = lookupCountryVat(countryInput);
+
+        const cardEl2 = document.getElementById(cardId);
+        if (!cardEl2) { fileInput.value = ''; return; }
+
+        cardEl2.innerHTML = `
+            <img src="${imgUrl}" alt="חשבונית">
+            <details style="margin:8px 0;">
+                <summary style="cursor:pointer; color:#64748b; font-size:0.85em;">📄 הטקסט שזוהה בתמונה (לחצו להצגה - בדקו שהוא הגיוני)</summary>
+                <div style="white-space:pre-wrap; font-size:0.75em; color:#64748b; background:#f8fafc; border-radius:6px; padding:8px; margin-top:6px; max-height:150px; overflow:auto;">${escapeHtmlInvoice(ocrText) || '(לא זוהה טקסט - נסה/י תמונה ברורה וישרה יותר)'}</div>
+            </details>
+            <div class="form-group">
+                <label>סכום שזוהה (ניתן לתקן ידנית אם ה-OCR טעה):</label>
+                <input type="number" id="total-${cardId}" min="0" step="0.01" value="${guessedTotal != null ? guessedTotal : ''}" placeholder="הזן/י ידנית אם לא זוהה">
+            </div>
+            <button type="button" class="btn-main" style="background-color:var(--accent-purple);" onclick="calcInvoiceEstimate('${cardId}', ${JSON.stringify(countryInput).replace(/"/g, '&quot;')})">חשב הערכת החזר</button>
+            <div id="estimate-${cardId}"></div>
+            <button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>
+        `;
+
         fileInput.value = '';
+    }
+
+    function calcInvoiceEstimate(cardId, countryInput) {
+        const totalInput = document.getElementById(`total-${cardId}`);
+        const estimateBox = document.getElementById(`estimate-${cardId}`);
+        if (!totalInput || !estimateBox) return;
+
+        const total = parseFloat(totalInput.value);
+        if (!total || total <= 0) {
+            estimateBox.innerHTML = `<div class="invoice-error">⚠️ נא להזין סכום תקין לפני החישוב.</div>`;
+            return;
+        }
+
+        const vatInfo = lookupCountryVat(countryInput);
+        if (!vatInfo) {
+            estimateBox.innerHTML = `<div class="invoice-disclaimer">⚠️ לא נמצא מידע במאגר הפנימי עבור "${escapeHtmlInvoice(countryInput)}". יש לבדוק ידנית את שיעור המע"מ וזכאות ההחזר במדינה זו.</div>`;
+            return;
+        }
+
+        const vatIncluded = total * (vatInfo.rate / (100 + vatInfo.rate));
+        const netRefundLow = vatIncluded * 0.6;
+        const netRefundHigh = vatIncluded * 0.85;
+
+        estimateBox.innerHTML = `
+            <div class="invoice-answer">🧾 ${escapeHtmlInvoice(vatInfo.he)}
+מדינה: ${escapeHtmlInvoice(countryInput)}
+שיעור מע"מ (בטבלה הפנימית): ${vatInfo.rate}%
+מע"מ הכלול בסכום (הערכה): ${vatIncluded.toFixed(2)}
+הערכת החזר נטו לאחר עמלות טיפול אופייניות: ${netRefundLow.toFixed(2)} - ${netRefundHigh.toFixed(2)}
+
+תנאים חשובים: ${escapeHtmlInvoice(vatInfo.note)}</div>
+            <div class="invoice-disclaimer">⚠️ זו הערכה גסה בלבד, מבוססת על טבלת מע"מ קבועה בקוד (לא חיפוש רשת חי) וסכום שזוהה ב-OCR חופשי בדפדפן - לא אישור רשמי ולא תחליף לבדיקה מול חנות ה-Tax Free או רשות המכס בפועל. שיעורי המע"מ עשויים להתעדכן ולהיות שונים ממה שמוצג כאן. שמרו את כל הקבלות המקוריות.</div>
+        `;
     }
 
     function geocodeOnce(query) {
