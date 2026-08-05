@@ -1,8 +1,8 @@
-// Service Worker פשוט - שומר "מעטפת אפליקציה" (הדף עצמו וספריית המפות) במטמון,
-// כדי שהטופס עצמו (הוספת/מחיקת פריטים, חישוב תקציב) ימשיך לעבוד גם ללא אינטרנט.
-// בקשות לשירותים חיצוניים חיים (חיפוש מפה, תרגום) תמיד יוצאות לרשת - אי אפשר וגם לא רצוי לשמור אותן במטמון.
+// Service Worker: מעדכן תמיד קודם מהרשת (network-first) לדף עצמו ולקבצי המניפסט,
+// כדי שאתה תמיד תראה את הגרסה העדכנית ביותר כשיש אינטרנט. המטמון (cache) משמש רק
+// כרשת ביטחון למקרה שאין חיבור בכלל (עבודה אופליין) - לא כמקור ברירת מחדל.
 
-const CACHE_NAME = 'trip-planner-shell-v1';
+const CACHE_NAME = 'trip-planner-shell-v2';
 
 const APP_SHELL = [
   './',
@@ -12,11 +12,18 @@ const APP_SHELL = [
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'
 ];
 
+// קבצים "כבדים" שכמעט אף פעם לא משתנים - להם כן משתלם קודם מהמטמון (מהיר יותר, חוסך תעבורה)
+const STATIC_LIBS = [
+  'cdnjs.cloudflare.com',
+  'cdn.jsdelivr.net',
+  'unpkg.com'
+];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(APP_SHELL))
-      .catch(() => {}) // אם משאב כלשהו נכשל בטעינה, לא נופלים - הכלי ימשיך לעבוד עם מה שכן נשמר
+      .catch(() => {})
   );
   self.skipWaiting();
 });
@@ -33,7 +40,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // בקשות API חיות (חיפוש מקומות, תרגום) - תמיד לרשת, אף פעם לא מהמטמון
+  // בקשות API חיות (חיפוש מקומות, תרגום, OCR מ-CDN בזמן ריצה) - תמיד לרשת, אף פעם לא מהמטמון
   const isLiveApi = url.hostname.includes('nominatim.openstreetmap.org') ||
                      url.hostname.includes('api.anthropic.com') ||
                      url.hostname.includes('basemaps.cartocdn.com') ||
@@ -44,20 +51,35 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // מעטפת האפליקציה - קודם מהמטמון (עובד אופליין), עם ניסיון רענון ברקע כשיש רשת
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
-        .then((response) => {
+  // ספריות סטטיות כבדות (Leaflet וכו') - מטמון קודם, זה בסדר כי הן כמעט אף פעם לא משתנות
+  const isStaticLib = STATIC_LIBS.some((host) => url.hostname.includes(host));
+  if (isStaticLib) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
           if (response && response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
           return response;
-        })
-        .catch(() => cached);
+        });
+      })
+    );
+    return;
+  }
 
-      return cached || networkFetch;
-    })
+  // הדף עצמו (index.html), manifest.json וכו' - קודם רשת, כדי שתמיד תראו את הגרסה החדשה ביותר.
+  // רק אם אין בכלל אינטרנט, נופלים חזרה לגרסה השמורה במטמון.
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
