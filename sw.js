@@ -44,7 +44,8 @@ self.addEventListener('fetch', (event) => {
   const isLiveApi = url.hostname.includes('nominatim.openstreetmap.org') ||
                      url.hostname.includes('api.anthropic.com') ||
                      url.hostname.includes('basemaps.cartocdn.com') ||
-                     url.hostname.includes('tile.openstreetmap.org');
+                     url.hostname.includes('tile.openstreetmap.org') ||
+                     url.hostname.includes('translate.googleapis.com');
 
   if (isLiveApi) {
     event.respondWith(fetch(event.request).catch(() => new Response('', { status: 503 })));

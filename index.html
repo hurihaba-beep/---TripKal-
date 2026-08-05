@@ -647,26 +647,14 @@
 
     // תרגום כללי לאנגלית לצורך חיפוש במפה - עובד לכל שפה (עברית, ערבית, רוסית ועוד),
     // בלי מילון קשיח מוגבל מראש. משמש כגיבוי כשהחיפוש בשפה המקורית לא מוצא תוצאות.
+    // תרגום חיפוש לאנגלית - גרסה חינמית שרצה ישירות מהדפדפן, בלי צורך במפתח API,
+    // כדי שזה יעבוד גם באתר החי (בניגוד לגרסה הקודמת שהייתה תלויה ב-AI וחסומה שם).
     async function translateToEnglish(text) {
         try {
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: "claude-sonnet-4-6",
-                    max_tokens: 60,
-                    messages: [{
-                        role: "user",
-                        content: `Translate this place/search query to English for use in a map search. Output ONLY the translated text, no quotes, no explanation:\n\n${text}`
-                    }]
-                })
-            });
+            const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`);
+            if (!response.ok) return null;
             const data = await response.json();
-            const translated = (data.content || [])
-                .filter(b => b.type === 'text')
-                .map(b => b.text)
-                .join('')
-                .trim();
+            const translated = (data && data[0]) ? data[0].map(seg => seg[0]).join('') : '';
             return translated || null;
         } catch (e) {
             return null;
