@@ -511,9 +511,11 @@
         <div class="card">
             <h2>שלב 6: סריקת חשבונית להערכת החזר מס (Tax Free) 🧾</h2>
             <p class="hint" style="margin-top:-6px;">צלמו או העלו חשבונית/קבלה מחנות - הכלי יקרא אותה, יבדוק ברשת את חוקי החזר המע"מ העדכניים במדינה, ויעריך את סכום ההחזר האפשרי.</p>
+            <div class="invoice-disclaimer" style="margin-bottom:12px;">ℹ️ תכונה זו פועלת רק כשהכלי נטען בתוך הצ'אט של Claude.ai. אם אתה משתמש/ת בגרסה המתארחת (GitHub Pages וכו'), התכונה הזו לא תעבוד - אבל אפשר פשוט להעלות את תמונת החשבונית ישירות לצ'אט עם Claude במקום.</div>
             <div class="form-group">
                 <label>תמונת חשבונית:</label>
                 <input type="file" id="invoiceFile" accept="image/*">
+                <button type="button" class="btn-delete" style="width:auto; margin-top:6px;" onclick="document.getElementById('invoiceFile').value=''">✕ נקה קובץ שנבחר</button>
             </div>
             <div class="form-group">
                 <label>מדינת הרכישה:</label>
@@ -709,7 +711,7 @@
         card.className = 'invoice-card';
         card.id = loadingId;
         const imgUrl = URL.createObjectURL(file);
-        card.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-loading">🔄 קורא את החשבונית ובודק חוקי החזר מס עדכניים ל-${escapeHtmlInvoice(country)}...</div>`;
+        card.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-loading">🔄 קורא את החשבונית ובודק חוקי החזר מס עדכניים ל-${escapeHtmlInvoice(country)}...</div><button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>`;
         resultsBox.prepend(card);
 
         try {
@@ -745,7 +747,16 @@
                     tools: [{ type: "web_search_20250305", name: "web_search" }]
                 })
             });
+
+            if (!response.ok) {
+                throw new Error('api-unavailable');
+            }
+
             const data = await response.json();
+            if (data.error) {
+                throw new Error('api-unavailable');
+            }
+
             const answer = (data.content || [])
                 .filter(b => b.type === 'text')
                 .map(b => b.text)
@@ -764,7 +775,15 @@
         } catch (err) {
             const cardEl = document.getElementById(loadingId);
             if (cardEl) {
-                cardEl.innerHTML = `<img src="${imgUrl}" alt="חשבונית"><div class="invoice-error">⚠️ שגיאה בקריאת החשבונית או בחיפוש ברשת. בדוק/י חיבור לאינטרנט ונסה/י שוב.</div>`;
+                cardEl.innerHTML = `
+                    <img src="${imgUrl}" alt="חשבונית">
+                    <div class="invoice-error">⚠️ התכונה הזו לא זמינה כרגע באתר הזה.</div>
+                    <div class="invoice-disclaimer">
+                        סריקת חשבוניות מבוססת על קריאה ל-AI (ראייה + חיפוש רשת), וזו יכולת שזמינה רק כשהכלי רץ <b>בתוך הצ'אט של Claude.ai</b> - לא באתר חיצוני מתארח כמו GitHub Pages, כי שם אין מפתח API שמאפשר את הקריאה.<br><br>
+                        <b>מה כן אפשר לעשות:</b> פשוט העלה/י את תמונת החשבונית ישירות לצ'אט עם Claude ותבקש/י ממנו לנתח אותה - זה יעבוד מצוין. שאר הכלי (תקציב, פריטים, מפה) ימשיך לעבוד רגיל באתר החיצוני, רק התכונה הזו הספציפית תלויה בסביבת הצ'אט.
+                    </div>
+                    <button class="btn-delete" style="margin-top:8px;" onclick="this.parentElement.remove()">הסר ✕</button>
+                `;
             }
         }
 
