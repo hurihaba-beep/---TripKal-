@@ -36,9 +36,9 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 15px;
-            font-size: 18px;
-            line-height: 1.5;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.4;
         }
 
         .user-bar {
@@ -87,10 +87,10 @@
 
         .card {
             background: var(--card);
-            padding: 22px;
-            border-radius: 16px;
+            padding: 16px;
+            border-radius: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             border: 2px solid var(--border);
         }
 
@@ -107,7 +107,7 @@
 
         input, select, button {
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             border: 2px solid var(--border);
             border-radius: 10px;
             font-size: 1em;
@@ -325,6 +325,7 @@
     <div class="user-info">
         <span>👤 שם העורך:</span>
         <input type="text" id="userNameInput" value="" placeholder="הכנס שם..." oninput="updateCurrentUser()" style="width: 180px; padding: 8px;">
+        <div id="nameRequiredHint" style="color:#dc2626; font-size:0.78em; margin-top:4px;">⚠️ יש להזין שם כאן לפני הוספת פריטים לטיול</div>
     </div>
     <div>
         <span>הצבע שלך: </span>
@@ -490,6 +491,7 @@
         <div class="card printable-card">
             <h2>תוכנית הטיול שלי 📋</h2>
             <div id="itemList"><p style="color: #64748b;">עדיין לא הוספתם רכיבים לטיול.</p></div>
+            <div id="listTotalSummary" style="font-size:0.85em; font-weight:bold; text-align:center; padding:6px; margin-bottom:10px;"></div>
 
             <div class="action-buttons">
                 <button class="btn-action btn-save-local" onclick="saveToDevice()">💾 שמור קובץ טיול למחשב/לנייד</button>
@@ -570,6 +572,9 @@
             badge.style.backgroundColor = '#94a3b8';
         }
 
+        const hint = document.getElementById('nameRequiredHint');
+        if (hint) hint.style.display = nameInput ? 'none' : 'block';
+
         try {
             if (nameInput) localStorage.setItem('my_trip_username', currentUser.name);
         } catch (e) {
@@ -584,6 +589,12 @@
         const nameInput = document.getElementById('userNameInput');
         nameInput.focus();
         nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        nameInput.style.borderColor = '#dc2626';
+        nameInput.style.borderWidth = '3px';
+        setTimeout(() => {
+            nameInput.style.borderColor = '';
+            nameInput.style.borderWidth = '';
+        }, 3000);
         return false;
     }
 
@@ -944,6 +955,11 @@
         document.getElementById('usedBudget').innerText = `${symbol}${used}`;
         document.getElementById('leftBudget').innerText = `${symbol}${left}`;
         document.getElementById('leftBudget').style.color = left < 0 ? 'red' : 'green';
+
+        const summaryEl = document.getElementById('listTotalSummary');
+        if (summaryEl) {
+            summaryEl.innerText = items.length > 0 ? `סה"כ עד כה: ${symbol}${used}` : '';
+        }
     }
 
     function addFlight() {
@@ -1521,5 +1537,6 @@
     }
 </script>
 
+<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-04-v8</div>
 
 </body></html>
