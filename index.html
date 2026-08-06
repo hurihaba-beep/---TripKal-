@@ -524,15 +524,15 @@
             </div>
             <label class="total-price-toggle">
                 <input type="checkbox" id="itemTotalMode" onchange="updateItemPriceLabel()">
-                הזן מחיר כולל (במקום מחיר ליחידה × כמות)
+                הזן מחיר כולל (במקום מחיר לנפש × מספר נפשות)
             </label>
             <div class="form-row">
                 <div class="form-group">
-                    <label>כמות:</label>
+                    <label>מספר נפשות:</label>
                     <input type="number" id="itemPeople" value="1" min="1">
                 </div>
                 <div class="form-group">
-                    <label id="itemPriceLabel">מחיר ליחידה:</label>
+                    <label id="itemPriceLabel">מחיר לנפש:</label>
                     <input type="number" id="itemPricePerPerson" placeholder="0" min="0">
                 </div>
             </div>
@@ -657,7 +657,7 @@
 
     function updateItemPriceLabel() {
         const isTotal = document.getElementById('itemTotalMode').checked;
-        document.getElementById('itemPriceLabel').innerText = isTotal ? 'מחיר כולל:' : 'מחיר ליחידה:';
+        document.getElementById('itemPriceLabel').innerText = isTotal ? 'מחיר כולל:' : 'מחיר לנפש:';
     }
 
     let currentUser = { name: "", color: "#94a3b8" };
@@ -1345,7 +1345,7 @@
         if (!name) return alert('אנא רשמו תיאור');
 
         const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(name + ' ' + dest)}`;
-        const peopleText = people > 1 ? ` (${people} יחידות/אנשים)` : '';
+        const peopleText = people > 1 ? ` (${people} נפשות)` : '';
 
         items.push({
             id: Date.now(),
@@ -1357,7 +1357,7 @@
             author: currentUser.name,
             color: currentUser.color,
             qty: people,
-            unitLabel: 'מחיר ליחידה/לאדם'
+            unitLabel: 'מחיר לנפש'
         });
 
         renderList();
@@ -1856,6 +1856,6 @@
     }
 </script>
 
-<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-06-v11</div>
+<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-06-v12</div>
 
 </body></html>
