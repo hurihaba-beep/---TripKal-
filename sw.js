@@ -2,7 +2,7 @@
 // כדי שאתה תמיד תראה את הגרסה העדכנית ביותר כשיש אינטרנט. המטמון (cache) משמש רק
 // כרשת ביטחון למקרה שאין חיבור בכלל (עבודה אופליין) - לא כמקור ברירת מחדל.
 
-const CACHE_NAME = 'trip-planner-shell-v2';
+const CACHE_NAME = 'trip-planner-shell-v3';
 
 const APP_SHELL = [
   './',
@@ -71,9 +71,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   // הדף עצמו (index.html), manifest.json וכו' - קודם רשת, כדי שתמיד תראו את הגרסה החדשה ביותר.
-  // רק אם אין בכלל אינטרנט, נופלים חזרה לגרסה השמורה במטמון.
+  // cache: 'no-store' מכריח את הדפדפן לפנות ממש לשרת, ולא "לשקר" עם תשובה שמורה במטמון ה-HTTP הרגיל.
+  // רק אם אין בכלל אינטרנט, נופלים חזרה לגרסה השמורה במטמון של ה-Service Worker.
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-store' })
       .then((response) => {
         if (response && response.ok) {
           const clone = response.clone();
