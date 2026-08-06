@@ -473,7 +473,10 @@
             <div class="collapsible-content">
             <div class="form-group">
                 <label>שם המלון:</label>
-                <input type="text" id="hotelName" placeholder="למשל: Hilton Hotel">
+                <input type="text" id="hotelName" placeholder="למשל: Hilton Hotel" oninput="updateHotelSearchLink()">
+            </div>
+            <div id="hotelLiveSearchBox" style="display:none; margin-bottom:14px;">
+                <a class="btn-check-external" style="background-color:#0284c7;" href="#" id="hotelLiveSearchLink" target="_blank">🔍 בדוק מחיר עכשיו ברשת עבור המלון הזה</a>
             </div>
             <div class="form-group">
                 <label>כמה לילות?</label>
@@ -656,6 +659,21 @@
     function updateHotelPriceLabel() {
         const isTotal = document.getElementById('hotelTotalMode').checked;
         document.getElementById('hotelPriceLabel').innerText = isTotal ? 'מחיר המלון (סה"כ):' : 'מחיר ללילה:';
+    }
+
+    // מעדכן בזמן אמת קישור לבדיקת מחיר עבור שם המלון שמוקלד, כדי לבדוק לפני שמוסיפים לרשימה
+    function updateHotelSearchLink() {
+        const name = document.getElementById('hotelName').value.trim();
+        const box = document.getElementById('hotelLiveSearchBox');
+        const link = document.getElementById('hotelLiveSearchLink');
+        const dest = (document.getElementById('destination') && document.getElementById('destination').value.trim()) || '';
+
+        if (!name) {
+            box.style.display = 'none';
+            return;
+        }
+        box.style.display = 'block';
+        link.href = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(name + ' ' + dest)}`;
     }
 
     function updateItemPriceLabel() {
@@ -1859,6 +1877,6 @@
     }
 </script>
 
-<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-06-v13</div>
+<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-06-v14</div>
 
 </body></html>
