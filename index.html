@@ -1279,7 +1279,9 @@
             currency: curr,
             url: searchUrl,
             author: currentUser.name,
-            color: currentUser.color
+            color: currentUser.color,
+            qty: passengers,
+            unitLabel: 'מחיר לנוסע'
         });
 
         renderList();
@@ -1315,7 +1317,9 @@
             currency: curr,
             url: searchUrl,
             author: currentUser.name,
-            color: currentUser.color
+            color: currentUser.color,
+            qty: nightsNum,
+            unitLabel: 'מחיר ללילה'
         });
 
         renderList();
@@ -1351,7 +1355,9 @@
             currency: curr,
             url: searchUrl,
             author: currentUser.name,
-            color: currentUser.color
+            color: currentUser.color,
+            qty: people,
+            unitLabel: 'מחיר ליחידה/לאדם'
         });
 
         renderList();
@@ -1450,6 +1456,12 @@
                 ? `<button class="btn-delete" onclick="removeItem(${item.id})">הסר ✕</button>`
                 : `<div style="font-size:0.8em; color:#94a3b8; margin-top:8px;">🔒 רק ${escapeHtml(authorName)} יכול/ה למחוק פריט זה</div>`;
 
+            let unitPriceBox = '';
+            if (item.qty && item.qty > 1) {
+                const perUnit = item.price / item.qty;
+                unitPriceBox = `<div style="display:inline-block; font-size:0.78em; background:#f1f5f9; color:#475569; border-radius:6px; padding:4px 8px; margin-bottom:6px;">👤 ${escapeHtml(item.unitLabel || 'מחיר ליחידה')}: ${item.currency}${perUnit.toFixed(2)} (÷${item.qty})</div>`;
+            }
+
             const div = document.createElement('div');
             div.className = 'item-card';
             div.style.borderRightColor = authorColor;
@@ -1458,6 +1470,7 @@
                 <div style="font-size: 1.2em; color: #1d4ed8; margin: 5px 0;">
                     סה"כ מחיר: ${item.currency}${item.price}${conversionText}
                 </div>
+                ${unitPriceBox}
                 <div class="item-author">
                     <span>נוסף/עודכן ע"י:</span>
                     <span class="user-badge" style="background-color: ${authorColor};">${escapeHtml(authorName)}</span>
@@ -1843,6 +1856,6 @@
     }
 </script>
 
-<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-06-v10</div>
+<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-06-v11</div>
 
 </body></html>
