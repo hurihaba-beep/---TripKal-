@@ -688,33 +688,118 @@
     }
 
     // טבלת שיעורי מע"מ משוערת + הערות זכאות למדינות נפוצות. ערכים סטטיים - עלולים להתיישן עם הזמן, לא מקור רשמי.
+    // טבלת מע"מ מורחבת - כ-65 מדינות. ערכים משוערים/סטנדרטיים, עלולים להתיישן - זו הערכה כללית בלבד, לא מקור רשמי.
+    const EU_STANDARD_NOTE = 'תוכנית Tax Free אירופאית סטנדרטית לתושבי חוץ לאיחוד האירופי, בכפוף לסכום רכישה מינימלי (משתנה לפי מדינה, בדרך כלל 50-175 יורו).';
     const COUNTRY_VAT_TABLE = {
-        'georgia': { rate: 18, he: 'ג\'ורג\'יה', note: 'קיימת תוכנית Tax Free לתיירים על רכישות מעל סכום מינימלי מסוים. יש לבדוק תנאים בחנות בזמן הרכישה.' },
-        'turkey': { rate: 20, he: 'טורקיה', note: 'קיימת תוכנית Tax Free לתיירי חוץ בחנויות מסומנות, בכפוף לסכום רכישה מינימלי.' },
-        'france': { rate: 20, he: 'צרפת', note: 'תוכנית Tax Free אירופאית סטנדרטית - בדרך כלל דורשת רכישה של כ-100 יורו ומעלה בחנות אחת, ותושבות מחוץ לאיחוד האירופי.' },
-        'germany': { rate: 19, he: 'גרמניה', note: 'תוכנית Tax Free אירופאית סטנדרטית, לתושבי חוץ לאיחוד האירופי, בכפוף לסכום רכישה מינימלי.' },
-        'italy': { rate: 22, he: 'איטליה', note: 'תוכנית Tax Free אירופאית סטנדרטית, סכום מינימלי לרכישה כ-70 יורו (משתנה).' },
-        'spain': { rate: 21, he: 'ספרד', note: 'תוכנית Tax Free אירופאית סטנדרטית, ללא סכום מינימום רשמי אך מומלץ לבדוק בחנות.' },
-        'greece': { rate: 24, he: 'יוון', note: 'תוכנית Tax Free אירופאית סטנדרטית, סכום רכישה מינימלי כ-50 יורו.' },
-        'portugal': { rate: 23, he: 'פורטוגל', note: 'תוכנית Tax Free אירופאית סטנדרטית.' },
-        'netherlands': { rate: 21, he: 'הולנד', note: 'תוכנית Tax Free אירופאית סטנדרטית, סכום מינימלי כ-50 יורו.' },
-        'switzerland': { rate: 8.1, he: 'שווייץ', note: 'לא באיחוד האירופי - תוכנית Tax Free נפרדת משלה, סכום מינימלי כ-300 פרנק.' },
-        'uae': { rate: 5, he: 'איחוד האמירויות', note: 'תוכנית Tax Free דיגיטלית (Planet) בחנויות רשומות, סכום מינימלי נמוך יחסית.' },
-        'thailand': { rate: 7, he: 'תאילנד', note: 'תוכנית VAT Refund בחנויות מסומנות "VAT Refund for Tourists", סכום מינימלי לרכישה בודדת וכולל.' },
-        'japan': { rate: 10, he: 'יפן', note: 'תוכנית Tax-Free בחנויות מסומנות, דורשת דרכון בזמן הרכישה, סכום מינימלי כ-5,000 ין.' },
-        'south korea': { rate: 10, he: 'דרום קוריאה', note: 'תוכנית Tax Free (למשל Global Blue), סכום מינימלי לרכישה.' },
-        'israel': { rate: 18, he: 'ישראל', note: '⚠️ ברוב המקרים אין תוכנית החזר מע"מ לתיירים על קניות רגילות בחנויות בישראל - זה שונה ממדינות אחרות ברשימה. יש הסדרי ייצוא מיוחדים לרכישות גדולות מסוימות בשדה התעופה בלבד.' },
-        'united kingdom': { rate: 20, he: 'בריטניה', note: '⚠️ תוכנית ה-Tax Free לתיירים בוטלה בבריטניה בשנת 2021 - כרגע אין החזר מע"מ סטנדרטי על קניות בחנויות.' },
-        'uk': { rate: 20, he: 'בריטניה', note: '⚠️ תוכנית ה-Tax Free לתיירים בוטלה בבריטניה בשנת 2021 - כרגע אין החזר מע"מ סטנדרטי על קניות בחנויות.' }
+        // אירופה
+        'austria':        { rate: 20,   he: 'אוסטריה',        aliases: [], note: EU_STANDARD_NOTE },
+        'belgium':        { rate: 21,   he: 'בלגיה',           aliases: [], note: EU_STANDARD_NOTE },
+        'bulgaria':       { rate: 20,   he: 'בולגריה',         aliases: [], note: EU_STANDARD_NOTE },
+        'croatia':        { rate: 25,   he: 'קרואטיה',         aliases: [], note: EU_STANDARD_NOTE },
+        'cyprus':         { rate: 19,   he: 'קפריסין',         aliases: [], note: EU_STANDARD_NOTE },
+        'czechia':        { rate: 21,   he: 'צ\'כיה',          aliases: ['czech republic', 'צכיה'], note: EU_STANDARD_NOTE },
+        'denmark':        { rate: 25,   he: 'דנמרק',           aliases: [], note: EU_STANDARD_NOTE },
+        'estonia':        { rate: 22,   he: 'אסטוניה',         aliases: [], note: EU_STANDARD_NOTE },
+        'finland':        { rate: 25.5, he: 'פינלנד',          aliases: [], note: EU_STANDARD_NOTE },
+        'france':         { rate: 20,   he: 'צרפת',            aliases: [], note: EU_STANDARD_NOTE + ' דורשת בדרך כלל רכישה של כ-100 יורו ומעלה בחנות אחת.' },
+        'germany':        { rate: 19,   he: 'גרמניה',          aliases: [], note: EU_STANDARD_NOTE },
+        'greece':         { rate: 24,   he: 'יוון',            aliases: [], note: EU_STANDARD_NOTE },
+        'hungary':        { rate: 27,   he: 'הונגריה',         aliases: [], note: EU_STANDARD_NOTE },
+        'iceland':        { rate: 24,   he: 'איסלנד',          aliases: [], note: 'לא באיחוד האירופי - תוכנית Tax Free נפרדת, סכום מינימלי כ-6,000 קרונה איסלנדית.' },
+        'ireland':        { rate: 23,   he: 'אירלנד',          aliases: [], note: EU_STANDARD_NOTE },
+        'italy':          { rate: 22,   he: 'איטליה',          aliases: [], note: EU_STANDARD_NOTE + ' סכום מינימלי כ-70 יורו.' },
+        'latvia':         { rate: 21,   he: 'לטביה',           aliases: [], note: EU_STANDARD_NOTE },
+        'lithuania':      { rate: 21,   he: 'ליטא',            aliases: [], note: EU_STANDARD_NOTE },
+        'luxembourg':     { rate: 17,   he: 'לוקסמבורג',       aliases: [], note: EU_STANDARD_NOTE },
+        'malta':          { rate: 18,   he: 'מלטה',            aliases: [], note: EU_STANDARD_NOTE },
+        'netherlands':    { rate: 21,   he: 'הולנד',           aliases: [], note: EU_STANDARD_NOTE + ' סכום מינימלי כ-50 יורו.' },
+        'norway':         { rate: 25,   he: 'נורווגיה',        aliases: [], note: 'לא באיחוד האירופי - תוכנית Tax Free נפרדת (Global Blue וכו׳), סכום מינימלי כ-315 קרונה נורווגית.' },
+        'poland':         { rate: 23,   he: 'פולין',           aliases: [], note: EU_STANDARD_NOTE },
+        'portugal':       { rate: 23,   he: 'פורטוגל',         aliases: [], note: EU_STANDARD_NOTE },
+        'romania':        { rate: 19,   he: 'רומניה',          aliases: [], note: EU_STANDARD_NOTE },
+        'slovakia':       { rate: 20,   he: 'סלובקיה',         aliases: [], note: EU_STANDARD_NOTE },
+        'slovenia':       { rate: 22,   he: 'סלובניה',         aliases: [], note: EU_STANDARD_NOTE },
+        'spain':          { rate: 21,   he: 'ספרד',            aliases: [], note: EU_STANDARD_NOTE + ' ללא סכום מינימום רשמי.' },
+        'sweden':         { rate: 25,   he: 'שוודיה',          aliases: [], note: EU_STANDARD_NOTE },
+        'switzerland':    { rate: 8.1,  he: 'שווייץ',          aliases: [], note: 'לא באיחוד האירופי - תוכנית Tax Free נפרדת, סכום מינימלי כ-300 פרנק שוויצרי.' },
+        'united kingdom': { rate: 20,   he: 'בריטניה',         aliases: ['uk', 'england'], note: '⚠️ תוכנית ה-Tax Free לתיירים בוטלה בבריטניה ב-2021 - כרגע אין החזר מע"מ סטנדרטי על קניות בחנויות.' },
+        'turkey':         { rate: 20,   he: 'טורקיה',          aliases: [], note: 'תוכנית Tax Free לתיירי חוץ בחנויות מסומנות, בכפוף לסכום רכישה מינימלי.' },
+        'ukraine':        { rate: 20,   he: 'אוקראינה',        aliases: [], note: 'תוכנית Tax Free קיימת בחנויות מסומנות, יש לבדוק תנאים עדכניים.' },
+        'russia':         { rate: 20,   he: 'רוסיה',           aliases: [], note: 'תוכנית Tax Free קיימת בחלק מהאזורים, יש לבדוק מגבלות עדכניות.' },
+        'serbia':         { rate: 20,   he: 'סרביה',           aliases: [], note: 'תוכנית Tax Free לתיירי חוץ, סכום מינימלי לרכישה.' },
+        'albania':        { rate: 20,   he: 'אלבניה',          aliases: [], note: 'תוכנית Tax Free מוגבלת, יש לבדוק בחנות.' },
+        'bosnia':         { rate: 17,   he: 'בוסניה',          aliases: [], note: 'תוכנית Tax Free לתיירי חוץ, סכום מינימלי לרכישה.' },
+        'montenegro':     { rate: 21,   he: 'מונטנגרו',        aliases: [], note: 'תוכנית Tax Free לתיירי חוץ, סכום מינימלי לרכישה.' },
+
+        // הקווקז והמזרח התיכון
+        'georgia':        { rate: 18, he: 'ג\'ורג\'יה',        aliases: ['גאורגיה', 'גורגיה'], note: 'קיימת תוכנית Tax Free לתיירים על רכישות מעל סכום מינימלי מסוים. יש לבדוק תנאים בחנות בזמן הרכישה.' },
+        'armenia':        { rate: 20, he: 'ארמניה',            aliases: [], note: 'תוכנית Tax Free מוגבלת, יש לבדוק בחנות בזמן הרכישה.' },
+        'azerbaijan':     { rate: 18, he: 'אזרבייג\'ן',        aliases: ['אזרביג\'ן'], note: 'תוכנית Tax Free בחנויות מסומנות, סכום מינימלי לרכישה.' },
+        'israel':         { rate: 18, he: 'ישראל',             aliases: [], note: '⚠️ ברוב המקרים אין תוכנית החזר מע"מ לתיירים על קניות רגילות בחנויות בישראל. יש הסדרי ייצוא מיוחדים לרכישות גדולות מסוימות בשדה התעופה בלבד.' },
+        'uae':            { rate: 5,  he: 'איחוד האמירויות',   aliases: ['united arab emirates', 'דובאי', 'dubai'], note: 'תוכנית Tax Free דיגיטלית (Planet) בחנויות רשומות, סכום מינימלי נמוך יחסית.' },
+        'saudi arabia':   { rate: 15, he: 'ערב הסעודית',       aliases: [], note: 'תוכנית Tax Free קיימת לתיירים בחלק מהחנויות, יש לבדוק תנאים עדכניים.' },
+        'qatar':          { rate: 0,  he: 'קטאר',              aliases: [], note: 'ללא מע"מ כללי נכון לרוב הרכישות - יש לבדוק אם חל שינוי.' },
+        'bahrain':        { rate: 10, he: 'בחריין',            aliases: [], note: 'תוכנית Tax Free דיגיטלית קיימת בחלק מהחנויות.' },
+        'oman':           { rate: 5,  he: 'עומאן',             aliases: [], note: 'מע"מ נמוך יחסית, תוכנית החזר מוגבלת.' },
+        'kuwait':         { rate: 0,  he: 'כווית',             aliases: [], note: 'ללא מע"מ כללי נכון לרוב הרכישות.' },
+        'jordan':         { rate: 16, he: 'ירדן',              aliases: [], note: 'תוכנית Tax Free מוגבלת, יש לבדוק בחנות.' },
+        'lebanon':        { rate: 11, he: 'לבנון',             aliases: [], note: 'תוכנית Tax Free קיימת בחלק מהחנויות המסומנות.' },
+        'egypt':          { rate: 14, he: 'מצרים',             aliases: [], note: 'תוכנית Tax Free קיימת בחנויות מסומנות, סכום מינימלי לרכישה.' },
+        'morocco':        { rate: 20, he: 'מרוקו',             aliases: [], note: 'תוכנית Tax Free מוגבלת, יש לבדוק בחנות.' },
+        'tunisia':        { rate: 19, he: 'תוניסיה',           aliases: [], note: 'תוכנית Tax Free לתיירי חוץ קיימת, סכום מינימלי לרכישה.' },
+
+        // אסיה
+        'japan':          { rate: 10, he: 'יפן',               aliases: [], note: 'תוכנית Tax-Free בחנויות מסומנות, דורשת דרכון בזמן הרכישה, סכום מינימלי כ-5,000 ין.' },
+        'south korea':    { rate: 10, he: 'דרום קוריאה',       aliases: ['korea', 'קוריאה'], note: 'תוכנית Tax Free (למשל Global Blue), סכום מינימלי לרכישה.' },
+        'china':          { rate: 13, he: 'סין',               aliases: [], note: 'תוכנית Departure Tax Refund מוגבלת לערים נבחרות ולחנויות מסומנות.' },
+        'thailand':       { rate: 7,  he: 'תאילנד',            aliases: [], note: 'תוכנית VAT Refund בחנויות מסומנות "VAT Refund for Tourists", סכום מינימלי לרכישה בודדת וכולל.' },
+        'vietnam':        { rate: 10, he: 'וייטנאם',           aliases: [], note: 'תוכנית Tax Refund קיימת בחלק מהחנויות והנמלים.' },
+        'indonesia':      { rate: 11, he: 'אינדונזיה',         aliases: [], note: 'תוכנית VAT Refund for Tourists בחנויות מסומנות, סכום מינימלי לרכישה.' },
+        'malaysia':       { rate: 6,  he: 'מלזיה',             aliases: [], note: 'מס מכירה/שירותים (SST) - תוכנית החזר מוגבלת, יש לבדוק תנאים עדכניים.' },
+        'singapore':      { rate: 9,  he: 'סינגפור',           aliases: [], note: 'תוכנית eTRS (Tourist Refund Scheme) בחנויות מסומנות, סכום מינימלי לרכישה.' },
+        'philippines':    { rate: 12, he: 'פיליפינים',         aliases: [], note: 'תוכנית VAT Refund מוגבלת, יש לבדוק תנאים עדכניים.' },
+        'india':          { rate: 18, he: 'הודו',              aliases: [], note: 'GST - בדרך כלל אין תוכנית החזר רחבה לתיירים על קניות רגילות.' },
+        'sri lanka':      { rate: 18, he: 'סרי לנקה',          aliases: [], note: 'תוכנית VAT Refund קיימת בחנויות מסומנות.' },
+        'kazakhstan':     { rate: 12, he: 'קזחסטן',            aliases: [], note: 'תוכנית Tax Free קיימת בחלק מהחנויות המסומנות.' },
+        'uzbekistan':     { rate: 12, he: 'אוזבקיסטן',         aliases: [], note: 'תוכנית Tax Free מוגבלת, יש לבדוק בחנות.' },
+
+        // אמריקה
+        'usa':            { rate: 0,  he: 'ארה"ב',             aliases: ['united states', 'america', 'אמריקה'], note: '⚠️ אין מע"מ פדרלי בארה"ב - יש מס מכירה (Sales Tax) שמשתנה לפי מדינה, ובדרך כלל אין תוכנית החזר לתיירים.' },
+        'canada':         { rate: 5,  he: 'קנדה',              aliases: [], note: '⚠️ מע"מ פדרלי (GST) בסיסי + מס מדינתי משתנה - אין תוכנית החזר כללית לתיירים מאז 2007.' },
+        'mexico':         { rate: 16, he: 'מקסיקו',            aliases: [], note: 'תוכנית Tax Free קיימת בחנויות מסומנות ובנמלי תעופה נבחרים.' },
+        'brazil':         { rate: 17, he: 'ברזיל',             aliases: [], note: 'מערכת מס מורכבת ומשתנה לפי מדינה (ICMS) - תוכנית החזר מוגבלת מאוד.' },
+        'argentina':      { rate: 21, he: 'ארגנטינה',          aliases: [], note: 'תוכנית Tax Free קיימת בחנויות מסומנות לתיירי חוץ.' },
+        'chile':          { rate: 19, he: 'צ\'ילה',            aliases: ['צ\'ילי'], note: 'תוכנית Tax Free מוגבלת לתיירי חוץ בחנויות מסומנות.' },
+        'colombia':       { rate: 19, he: 'קולומביה',          aliases: [], note: 'תוכנית Tax Free קיימת בחלק מהחנויות המסומנות.' },
+        'peru':           { rate: 18, he: 'פרו',               aliases: [], note: 'תוכנית Tax Free קיימת לתיירי חוץ בחנויות מסומנות.' },
+
+        // אפריקה ואוקיאניה
+        'south africa':   { rate: 15, he: 'דרום אפריקה',       aliases: [], note: 'תוכנית VAT Refund בנמלי תעופה לתיירי חוץ, סכום מינימלי לרכישה.' },
+        'kenya':          { rate: 16, he: 'קניה',              aliases: [], note: 'תוכנית Tax Refund מוגבלת, יש לבדוק תנאים עדכניים.' },
+        'nigeria':        { rate: 7.5, he: 'ניגריה',           aliases: [], note: 'אין תוכנית החזר רחבה לתיירים.' },
+        'australia':      { rate: 10, he: 'אוסטרליה',         aliases: [], note: 'תוכנית TRS (Tourist Refund Scheme) בנמל התעופה, סכום מינימלי כ-300 דולר אוסטרלי בחנות אחת.' },
+        'new zealand':    { rate: 15, he: 'ניו זילנד',         aliases: [], note: '⚠️ אין תוכנית החזר מע"מ (GST) כללית לתיירים בניו זילנד.' }
     };
 
+    // מנרמל טקסט להשוואה: מוריד גרש/גרשיים עבריים, רווחים כפולים, ומקטין אותיות (לועזית)
+    function normalizeCountryText(str) {
+        return str.trim().toLowerCase().replace(/['"׳״]/g, '').replace(/\s+/g, ' ');
+    }
+
     function lookupCountryVat(countryRaw) {
-        const key = countryRaw.trim().toLowerCase();
-        if (COUNTRY_VAT_TABLE[key]) return COUNTRY_VAT_TABLE[key];
-        // ניסיון התאמה לפי שם בעברית או התאמה חלקית
+        const normInput = normalizeCountryText(countryRaw);
+        if (!normInput) return null;
+
         for (const k in COUNTRY_VAT_TABLE) {
             const entry = COUNTRY_VAT_TABLE[k];
-            if (entry.he === countryRaw.trim() || key.includes(k) || k.includes(key)) return entry;
+            const candidates = [k, entry.he, ...(entry.aliases || [])].map(normalizeCountryText);
+            if (candidates.some(c => c === normInput)) return entry;
+        }
+        // ניסיון שני: התאמה חלקית (substring) - רק אם לא נמצאה התאמה מדויקת
+        for (const k in COUNTRY_VAT_TABLE) {
+            const entry = COUNTRY_VAT_TABLE[k];
+            const candidates = [k, entry.he, ...(entry.aliases || [])].map(normalizeCountryText);
+            if (candidates.some(c => c.length > 2 && (normInput.includes(c) || c.includes(normInput)))) return entry;
         }
         return null;
     }
