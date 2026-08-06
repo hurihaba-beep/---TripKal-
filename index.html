@@ -136,6 +136,19 @@
             box-sizing: border-box;
         }
 
+        input[type="checkbox"] { width: auto; padding: 0; margin-inline-end: 6px; vertical-align: middle; }
+        .total-price-toggle {
+            display: flex;
+            align-items: center;
+            font-size: 0.85em;
+            color: #475569;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
         input:focus, select:focus {
             border-color: var(--primary);
             outline: none;
@@ -424,13 +437,17 @@
                 <label>חברת תעופה / תיאור הטיסה:</label>
                 <input type="text" id="flightName" placeholder="למשל: El Al / Wizz Air">
             </div>
+            <label class="total-price-toggle">
+                <input type="checkbox" id="flightTotalMode" onchange="updateFlightPriceLabel()">
+                הזן מחיר כולל לכל הנוסעים יחד (במקום מחיר לנוסע בודד)
+            </label>
             <div class="form-row">
                 <div class="form-group">
                     <label>מספר נוסעים:</label>
                     <input type="number" id="flightPassengers" value="1" min="1">
                 </div>
                 <div class="form-group">
-                    <label>מחיר לנוסע:</label>
+                    <label id="flightPriceLabel">מחיר לנוסע:</label>
                     <input type="number" id="flightPrice" placeholder="250" min="0">
                 </div>
             </div>
@@ -457,11 +474,15 @@
             </div>
             <div class="form-group">
                 <label>כמה לילות?</label>
-                <input type="number" id="hotelNights" value="" placeholder="3" min="1">
+                <input type="number" id="hotelNights" value="" placeholder="3" min="1" oninput="this.dataset.userEdited='true'">
             </div>
+            <label class="total-price-toggle">
+                <input type="checkbox" id="hotelTotalMode" checked onchange="updateHotelPriceLabel()">
+                הזן מחיר כולל לכל השהות (במקום מחיר ללילה)
+            </label>
             <div class="form-row">
                 <div class="form-group">
-                    <label>מחיר המלון:</label>
+                    <label id="hotelPriceLabel">מחיר המלון (סה"כ):</label>
                     <input type="number" id="hotelPrice" placeholder="300" min="0">
                 </div>
                 <div class="form-group">
@@ -501,13 +522,17 @@
                 <label>תיאור קצר (שם המקום):</label>
                 <input type="text" id="itemName" placeholder="למשל: Botanical Garden">
             </div>
+            <label class="total-price-toggle">
+                <input type="checkbox" id="itemTotalMode" onchange="updateItemPriceLabel()">
+                הזן מחיר כולל (במקום מחיר ליחידה × כמות)
+            </label>
             <div class="form-row">
                 <div class="form-group">
                     <label>כמות:</label>
                     <input type="number" id="itemPeople" value="1" min="1">
                 </div>
                 <div class="form-group">
-                    <label>מחיר ליחידה:</label>
+                    <label id="itemPriceLabel">מחיר ליחידה:</label>
                     <input type="number" id="itemPricePerPerson" placeholder="0" min="0">
                 </div>
             </div>
@@ -619,6 +644,22 @@
             box.style.display = 'none';
         }
     }
+
+    function updateFlightPriceLabel() {
+        const isTotal = document.getElementById('flightTotalMode').checked;
+        document.getElementById('flightPriceLabel').innerText = isTotal ? 'מחיר כולל לכל הנוסעים:' : 'מחיר לנוסע:';
+    }
+
+    function updateHotelPriceLabel() {
+        const isTotal = document.getElementById('hotelTotalMode').checked;
+        document.getElementById('hotelPriceLabel').innerText = isTotal ? 'מחיר המלון (סה"כ):' : 'מחיר ללילה:';
+    }
+
+    function updateItemPriceLabel() {
+        const isTotal = document.getElementById('itemTotalMode').checked;
+        document.getElementById('itemPriceLabel').innerText = isTotal ? 'מחיר כולל:' : 'מחיר ליחידה:';
+    }
+
     let currentUser = { name: "", color: "#94a3b8" };
 
     const RATES_TO_USD = {
@@ -1149,7 +1190,14 @@
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
             if (diffDays > 0) {
-                textEl.innerText = `${diffDays} ימים (${diffDays - 1} לילות)`;
+                const nights = diffDays - 1;
+                textEl.innerText = `${diffDays} ימים (${nights} לילות)`;
+
+                // ממלא אוטומטית את מספר הלילות במלון בשלב 3, רק אם המשתמש עוד לא שינה את זה ידנית בעצמו
+                const hotelNightsInput = document.getElementById('hotelNights');
+                if (hotelNightsInput && !hotelNightsInput.dataset.userEdited && nights > 0) {
+                    hotelNightsInput.value = nights;
+                }
             } else {
                 textEl.innerText = "תאריך לא תקין";
             }
@@ -1212,8 +1260,9 @@
         const dest = document.getElementById('destination').value.trim();
         const name = document.getElementById('flightName').value.trim();
         const passengers = parseInt(document.getElementById('flightPassengers').value) || 1;
-        const pricePerPerson = parseFloat(document.getElementById('flightPrice').value) || 0;
-        const totalPrice = passengers * pricePerPerson;
+        const flightPriceInput = parseFloat(document.getElementById('flightPrice').value) || 0;
+        const flightIsTotal = document.getElementById('flightTotalMode').checked;
+        const totalPrice = flightIsTotal ? flightPriceInput : passengers * flightPriceInput;
         const curr = document.getElementById('flightCurrency').value;
 
         if (!name) return alert('אנא רשמו את שם הטיסה');
@@ -1248,7 +1297,10 @@
         const dest = document.getElementById('destination').value.trim();
         const name = document.getElementById('hotelName').value.trim();
         const nights = document.getElementById('hotelNights').value;
-        const price = parseFloat(document.getElementById('hotelPrice').value) || 0;
+        const hotelPriceInput = parseFloat(document.getElementById('hotelPrice').value) || 0;
+        const hotelIsTotal = document.getElementById('hotelTotalMode').checked;
+        const nightsNum = parseInt(nights) || 1;
+        const price = hotelIsTotal ? hotelPriceInput : hotelPriceInput * nightsNum;
         const curr = document.getElementById('hotelCurrency').value;
 
         if (!name) return alert('אנא רשמו את שם המלון');
@@ -1280,8 +1332,9 @@
         const type = document.getElementById('itemType').value;
         const name = document.getElementById('itemName').value.trim();
         const people = parseInt(document.getElementById('itemPeople').value) || 1;
-        const pricePerPerson = parseFloat(document.getElementById('itemPricePerPerson').value) || 0;
-        const totalPrice = people * pricePerPerson;
+        const itemPriceInput = parseFloat(document.getElementById('itemPricePerPerson').value) || 0;
+        const itemIsTotal = document.getElementById('itemTotalMode').checked;
+        const totalPrice = itemIsTotal ? itemPriceInput : people * itemPriceInput;
         const curr = document.getElementById('itemCurrency').value;
         const dest = document.getElementById('destination').value.trim();
 
@@ -1342,9 +1395,18 @@
         document.getElementById('flightPassengers').value = '1';
         document.getElementById('hotelName').value = '';
         document.getElementById('hotelPrice').value = '';
+        document.getElementById('hotelNights').value = '';
+        delete document.getElementById('hotelNights').dataset.userEdited;
         document.getElementById('itemName').value = '';
         document.getElementById('itemPricePerPerson').value = '';
         document.getElementById('itemPeople').value = '1';
+
+        document.getElementById('flightTotalMode').checked = false;
+        updateFlightPriceLabel();
+        document.getElementById('hotelTotalMode').checked = true;
+        updateHotelPriceLabel();
+        document.getElementById('itemTotalMode').checked = false;
+        updateItemPriceLabel();
 
         previousMainCurrency = getMainSymbol();
         calcDays();
@@ -1781,6 +1843,6 @@
     }
 </script>
 
-<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-04-v8</div>
+<div style="text-align:center; font-size:0.7em; color:#94a3b8; padding:10px;">גרסת קוד: 2026-08-06-v10</div>
 
 </body></html>
