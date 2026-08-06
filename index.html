@@ -104,6 +104,23 @@
 
         h1 { font-size: 1.8em; text-align: center; color: var(--primary); margin-top: 0; }
         h2 { font-size: 1.3em; color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        h2.collapsible-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+        h2.collapsible-header .toggle-arrow {
+            font-size: 0.7em;
+            color: var(--muted, #64748b);
+            transition: transform 0.2s;
+            margin-inline-start: 8px;
+        }
+        .card.collapsed .toggle-arrow { transform: rotate(-90deg); }
+        .card.collapsed h2.collapsible-header { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+        .collapsible-content { overflow: hidden; }
+        .card.collapsed .collapsible-content { display: none; }
 
         .form-group { margin-bottom: 16px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -315,6 +332,8 @@
             .container { display: block; }
             .user-bar, .card:not(.printable-card), .btn-check-external, .btn-delete, .action-buttons, .btn-new-trip { display: none !important; }
             .printable-card { border: none; box-shadow: none; padding: 0; }
+            .printable-card .collapsible-content { display: block !important; }
+            .toggle-arrow { display: none !important; }
         }
     </style>
 </head>
@@ -346,7 +365,8 @@
         <!-- שלב 1 -->
         <div class="card">
             <button class="btn-new-trip" onclick="startNewTrip()">🆕 התחל טיול חדש (איפוס)</button>
-            <h2>שלב 1: לאן נוסעים ומתי? 🌍</h2>
+            <h2 class="collapsible-header" onclick="toggleCard(this)">שלב 1: לאן נוסעים ומתי? 🌍<span class="toggle-arrow">▼</span></h2>
+            <div class="collapsible-content">
             <div class="form-group">
                 <label>עיר / מדינת היעד:</label>
                 <input type="text" id="destination" value="" placeholder="למשל: Rome, Paris, Batumi" oninput="onDestinationChange()">
@@ -393,11 +413,13 @@
                     <span id="leftBudget" style="color: green;">₪5000</span>
                 </div>
             </div>
+            </div>
         </div>
 
         <!-- שלב 2 -->
         <div class="card flight-box">
-            <h2>שלב 2: הוספת טיסה ✈️</h2>
+            <h2 class="collapsible-header" onclick="toggleCard(this)">שלב 2: הוספת טיסה ✈️<span class="toggle-arrow">▼</span></h2>
+            <div class="collapsible-content">
             <div class="form-group">
                 <label>חברת תעופה / תיאור הטיסה:</label>
                 <input type="text" id="flightName" placeholder="למשל: El Al / Wizz Air">
@@ -422,11 +444,13 @@
                 </select>
             </div>
             <button class="btn-main" style="background-color: var(--primary);" onclick="addFlight()">הוסף טיסה</button>
+            </div>
         </div>
 
         <!-- שלב 3 -->
         <div class="card hotel-box">
-            <h2>שלב 3: הוספת מלון 🏨</h2>
+            <h2 class="collapsible-header" onclick="toggleCard(this)">שלב 3: הוספת מלון 🏨<span class="toggle-arrow">▼</span></h2>
+            <div class="collapsible-content">
             <div class="form-group">
                 <label>שם המלון:</label>
                 <input type="text" id="hotelName" placeholder="למשל: Hilton Hotel">
@@ -451,19 +475,27 @@
                 </div>
             </div>
             <button class="btn-main" style="background-color: var(--accent-purple);" onclick="addHotel()">הוסף מלון</button>
+            </div>
         </div>
 
         <!-- שלב 4 -->
         <div class="card">
-            <h2>שלב 4: מסעדות, אטרקציות וקניות 🍽️ / 📍 / 🛍️</h2>
+            <h2 class="collapsible-header" onclick="toggleCard(this)">שלב 4: מסעדות, אטרקציות, קניות וביטוחים 🍽️ / 📍 / 🛍️ / 🛡️<span class="toggle-arrow">▼</span></h2>
+            <div class="collapsible-content">
             <div class="form-group">
                 <label>מה ברצונכם להוסיף?</label>
-                <select id="itemType">
+                <select id="itemType" onchange="toggleInsuranceLinks()">
                     <option value="🍽️ מסעדה / אוכל">🍽️ מסעדה / אוכל</option>
                     <option value="📍 אטרקציה / טיול">📍 אטרקציה / טיול</option>
                     <option value="🛍️ קניות / שופינג">🛍️ קניות / שופינג</option>
                     <option value="🚌 תחבורה">🚌 תחבורה / נסיעות</option>
+                    <option value="🛡️ ביטוח נסיעות">🛡️ ביטוח נסיעות</option>
+                    <option value="✈️❌ ביטוח ביטול טיסה">✈️❌ ביטוח ביטול טיסה</option>
                 </select>
+            </div>
+            <div id="insuranceLinksBox" style="display:none; margin-bottom:14px;">
+                <a class="btn-check-external" style="background-color:#0d9488;" href="#" id="insuranceSearchLink" target="_blank">🔍 השוואת מחירים לביטוח זה</a>
+                <p class="hint" style="margin-top:6px;">הקישור פותח חיפוש כללי - זו לא המלצה על חברה ספציפית, מומלץ להשוות כמה הצעות לפני רכישה.</p>
             </div>
             <div class="form-group">
                 <label>תיאור קצר (שם המקום):</label>
@@ -489,13 +521,15 @@
                 </select>
             </div>
             <button class="btn-main" style="background-color: var(--accent-green);" onclick="addItem()">הוסף לרשימה</button>
+            </div>
         </div>
     </div>
 
     <!-- עמודה שמאלית -->
     <div>
         <div class="card printable-card">
-            <h2>תוכנית הטיול שלי 📋</h2>
+            <h2 class="collapsible-header" onclick="toggleCard(this)">תוכנית הטיול שלי 📋<span class="toggle-arrow">▼</span></h2>
+            <div class="collapsible-content">
             <div id="itemList"><p style="color: #64748b;">עדיין לא הוספתם רכיבים לטיול.</p></div>
             <div id="listTotalSummary" style="font-size:0.85em; font-weight:bold; text-align:center; padding:6px; margin-bottom:10px;"></div>
 
@@ -505,19 +539,23 @@
                 <button class="btn-action btn-email" onclick="sendEmailWithFile()">✉️ שלח במייל</button>
                 <button class="btn-action btn-share-app" onclick="shareAppWithData()">📤 שתף קובץ לעריכה</button>
             </div>
+            </div>
         </div>
 
-        <div class="card">
-            <h2>חיפוש נקודות ומקומות במפה 🗺️</h2>
+        <div class="card collapsed">
+            <h2 class="collapsible-header" onclick="toggleCard(this)">חיפוש נקודות ומקומות במפה 🗺️<span class="toggle-arrow">▼</span></h2>
+            <div class="collapsible-content">
             <div class="form-group">
                 <input type="text" id="mapSearchInput" placeholder="חפש: 'מסעדת בשר בעיר העתיקה', 'סושי', 'מלון'...">
             </div>
             <button id="mapSearchBtn" class="btn-main" style="padding:12px; background-color:var(--accent-blue);" onclick="searchOnMap()">🔍 חפש במפה</button>
             <div id="map"></div>
+            </div>
         </div>
 
-        <div class="card">
-            <h2>שלב 6: סריקת חשבונית להערכת החזר מס (Tax Free) 🧾</h2>
+        <div class="card collapsed">
+            <h2 class="collapsible-header" onclick="toggleCard(this)">שלב 6: סריקת חשבונית להערכת החזר מס (Tax Free) 🧾<span class="toggle-arrow">▼</span></h2>
+            <div class="collapsible-content">
             <p class="hint" style="margin-top:-6px;">צלמו או העלו חשבונית/קבלה - הכלי יקרא את הטקסט מהתמונה (OCR חינמי, רץ בדפדפן) ויעריך החזר מס לפי טבלת שיעורי מע"מ קבועה.</p>
             <div class="invoice-disclaimer" style="margin-bottom:12px;">ℹ️ זו גרסה חינמית שרצה כולה בדפדפן (בלי לשלוח שום מידע לשרת חיצוני) - עובדת גם באתר החי וגם כאן בצ'אט. הדיוק תלוי באיכות התמונה ובעדכניות טבלת המע"מ הפנימית - תמיד אפשר לתקן ידנית את הסכום שזוהה לפני החישוב.</div>
             <div class="form-group">
@@ -540,6 +578,7 @@
             </div>
             <button class="btn-main" style="background-color:var(--accent-purple);" onclick="scanInvoice()">🔍 סרוק והערך החזר</button>
             <div id="invoiceResults"></div>
+            </div>
         </div>
     </div>
 
@@ -548,7 +587,38 @@
 <script type="application/json" id="tripDataEmbedded"></script>
 <script>
     let items = [];
+
+    // מצמצם/מרחיב כרטיס (שלב) בלחיצה על הכותרת שלו
+    function toggleCard(headerEl) {
+        const card = headerEl.closest('.card');
+        if (!card) return;
+        card.classList.toggle('collapsed');
+        // אם זה כרטיס המפה שנפתח, לרענן את גודל המפה (Leaflet לא מחשב נכון גדלים בתוך אלמנט שהיה מוסתר)
+        if (!card.classList.contains('collapsed') && card.querySelector('#map')) {
+            setTimeout(() => { if (typeof map !== 'undefined' && map) map.invalidateSize(); }, 150);
+        }
+    }
     let destTimer = null;
+
+    // מציג קישור להשוואת מחירים כשבוחרים סוג ביטוח בשלב 4, עם חיפוש כללי (לא ממליץ על חברה ספציפית)
+    function toggleInsuranceLinks() {
+        const type = document.getElementById('itemType').value;
+        const box = document.getElementById('insuranceLinksBox');
+        const link = document.getElementById('insuranceSearchLink');
+        const dest = (document.getElementById('destination') && document.getElementById('destination').value.trim()) || '';
+
+        if (type === '🛡️ ביטוח נסיעות') {
+            box.style.display = 'block';
+            link.href = `https://www.google.com/search?q=${encodeURIComponent('השוואת מחירי ביטוח נסיעות ' + dest)}`;
+            link.innerText = '🔍 השוואת מחירים לביטוח נסיעות';
+        } else if (type === '✈️❌ ביטוח ביטול טיסה') {
+            box.style.display = 'block';
+            link.href = `https://www.google.com/search?q=${encodeURIComponent('השוואת מחירי ביטוח ביטול טיסה ' + dest)}`;
+            link.innerText = '🔍 השוואת מחירים לביטוח ביטול טיסה';
+        } else {
+            box.style.display = 'none';
+        }
+    }
     let currentUser = { name: "", color: "#94a3b8" };
 
     const RATES_TO_USD = {
