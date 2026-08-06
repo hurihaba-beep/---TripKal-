@@ -523,6 +523,15 @@
                 <label>מדינת הרכישה:</label>
                 <input type="text" id="invoiceCountry" placeholder="לדוגמה: Georgia / France / Turkey">
             </div>
+            <div class="form-group">
+                <label>שפת ההסבר "איך מקבלים החזר":</label>
+                <select id="invoiceLang">
+                    <option value="he">עברית</option>
+                    <option value="en">English</option>
+                    <option value="ru">Русский</option>
+                    <option value="ar">العربية</option>
+                </select>
+            </div>
             <button class="btn-main" style="background-color:var(--accent-purple);" onclick="scanInvoice()">🔍 סרוק והערך החזר</button>
             <div id="invoiceResults"></div>
         </div>
@@ -908,6 +917,72 @@
         fileInput.value = '';
     }
 
+    // מדריך כללי "איך בפועל מקבלים את ההחזר" - זהה ברוב העולם, מתורגם ל-4 שפות
+    const REFUND_STEPS_BY_LANG = {
+        he: {
+            dir: 'rtl',
+            label: 'עברית',
+            title: '🧭 איך בפועל מקבלים את ההחזר:',
+            steps: [
+                'בזמן הקנייה - בקשו מהמוכר/ת טופס Tax Free (או קבלה מיוחדת) ותעדו את מספר הדרכון שלכם.',
+                'שמרו את המוצרים ללא שימוש ועם התווית/אריזה מקורית עד לצאתכם מהמדינה.',
+                'בנמל התעופה/גבול היציאה - לפני הצ׳ק-אין (במדינות רבות) הציגו את הטופס, הקבלות והמוצרים לביקורת המכס ובקשו חותמת אישור.',
+                'קבלו את ההחזר בפועל - בעמדת ההחזר בשדה התעופה (מזומן), או בהעברה לכרטיס האשראי/דואר בתוך מספר שבועות.',
+                'שמרו עותק/צילום של כל המסמכים החתומים למקרה של בירור.'
+            ]
+        },
+        en: {
+            dir: 'ltr',
+            label: 'English',
+            title: '🧭 How to actually claim your refund:',
+            steps: [
+                'At purchase - ask the store for a Tax Free form (or special receipt) and provide your passport number.',
+                'Keep the items unused, with original tags/packaging, until you leave the country.',
+                'At the airport/border - before check-in (in many countries), show the form, receipts, and items to customs and get it stamped.',
+                'Collect your refund - at the airport refund counter (cash), or via credit card/mail transfer within a few weeks.',
+                'Keep a copy/photo of all stamped documents in case of questions later.'
+            ]
+        },
+        ru: {
+            dir: 'ltr',
+            label: 'Русский',
+            title: '🧭 Как на самом деле получить возврат:',
+            steps: [
+                'При покупке - попросите у продавца форму Tax Free (или специальный чек) и укажите номер паспорта.',
+                'Храните товары неиспользованными, с оригинальными бирками/упаковкой, до выезда из страны.',
+                'В аэропорту/на границе - до регистрации на рейс (во многих странах) покажите форму, чеки и товары таможне и получите штамп.',
+                'Получите возврат - в кассе возврата в аэропорту (наличными) или переводом на карту/почтой в течение нескольких недель.',
+                'Сохраните копию/фото всех проштампованных документов на случай вопросов.'
+            ]
+        },
+        ar: {
+            dir: 'rtl',
+            label: 'العربية',
+            title: '🧭 كيف تحصل على استرداد الضريبة فعليًا:',
+            steps: [
+                'عند الشراء - اطلب من المتجر نموذج Tax Free (أو إيصال خاص) وقدّم رقم جواز سفرك.',
+                'احتفظ بالمشتريات دون استخدام، مع العلامات/التغليف الأصلي، حتى مغادرة البلد.',
+                'في المطار/الحدود - قبل تسجيل الوصول (في دول كثيرة) اعرض النموذج والإيصالات والمشتريات على الجمارك واحصل على ختم.',
+                'استلم الاسترداد - من مكتب الاسترداد في المطار (نقدًا)، أو عبر تحويل لبطاقة الائتمان/البريد خلال أسابيع قليلة.',
+                'احتفظ بنسخة/صورة لجميع المستندات المختومة تحسبًا لأي استفسار.'
+            ]
+        }
+    };
+
+    function getSelectedInvoiceLang() {
+        const sel = document.getElementById('invoiceLang');
+        return (sel && REFUND_STEPS_BY_LANG[sel.value]) ? sel.value : 'he';
+    }
+
+    function renderRefundStepsHtml(lang) {
+        const g = REFUND_STEPS_BY_LANG[lang] || REFUND_STEPS_BY_LANG.he;
+        const items = g.steps.map(s => `<li>${escapeHtmlInvoice(s)}</li>`).join('');
+        return `<div dir="${g.dir}" style="text-align:${g.dir === 'rtl' ? 'right' : 'left'}; margin-top:10px;">
+            <div style="font-weight:bold; margin-bottom:4px;">${escapeHtmlInvoice(g.title)}</div>
+            <ol style="margin:0; padding-${g.dir === 'rtl' ? 'right' : 'left'}:20px; font-size:0.85em; line-height:1.5;">${items}</ol>
+        </div>`;
+    }
+
     function calcInvoiceEstimate(cardId, countryInput) {
         const totalInput = document.getElementById(`total-${cardId}`);
         const estimateBox = document.getElementById(`estimate-${cardId}`);
@@ -920,8 +995,11 @@
         }
 
         const vatInfo = lookupCountryVat(countryInput);
+        const lang = getSelectedInvoiceLang();
+        const stepsHtml = renderRefundStepsHtml(lang);
+
         if (!vatInfo) {
-            estimateBox.innerHTML = `<div class="invoice-disclaimer">⚠️ לא נמצא מידע במאגר הפנימי עבור "${escapeHtmlInvoice(countryInput)}". יש לבדוק ידנית את שיעור המע"מ וזכאות ההחזר במדינה זו.</div>`;
+            estimateBox.innerHTML = `<div class="invoice-disclaimer">⚠️ לא נמצא מידע במאגר הפנימי עבור "${escapeHtmlInvoice(countryInput)}". יש לבדוק ידנית את שיעור המע"מ וזכאות ההחזר במדינה זו.</div>${stepsHtml}`;
             return;
         }
 
@@ -936,7 +1014,8 @@
 מע"מ הכלול בסכום (הערכה): ${vatIncluded.toFixed(2)}
 הערכת החזר נטו לאחר עמלות טיפול אופייניות: ${netRefundLow.toFixed(2)} - ${netRefundHigh.toFixed(2)}
 
-תנאים חשובים: ${escapeHtmlInvoice(vatInfo.note)}</div>
+תנאים חשובים (עברית בלבד): ${escapeHtmlInvoice(vatInfo.note)}</div>
+            ${stepsHtml}
             <div class="invoice-disclaimer">⚠️ זו הערכה גסה בלבד, מבוססת על טבלת מע"מ קבועה בקוד (לא חיפוש רשת חי) וסכום שזוהה ב-OCR חופשי בדפדפן - לא אישור רשמי ולא תחליף לבדיקה מול חנות ה-Tax Free או רשות המכס בפועל. שיעורי המע"מ עשויים להתעדכן ולהיות שונים ממה שמוצג כאן. שמרו את כל הקבלות המקוריות.</div>
         `;
     }
