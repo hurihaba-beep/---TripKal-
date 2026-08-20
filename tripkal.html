@@ -348,6 +348,17 @@
             margin-top: 10px;
         }
 
+        .header-badges { display:flex; align-items:center; gap:8px; }
+        .header-count-badge {
+            background: var(--primary);
+            color: white;
+            font-size: 0.65em;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
         .country-tax-box {
             display: none;
             background: #fef9e7;
@@ -582,7 +593,7 @@
     <!-- עמודה שמאלית -->
     <div>
         <div class="card printable-card">
-            <h2 class="collapsible-header" onclick="toggleCard(this)">תוכנית הטיול שלי 📋<span class="toggle-arrow">▼</span></h2>
+            <h2 class="collapsible-header" onclick="toggleCard(this)"><span>תוכנית הטיול שלי 📋</span><span class="header-badges"><span id="itemsCountBadge" class="header-count-badge">0 פריטים</span><span class="toggle-arrow">▼</span></span></h2>
             <div class="collapsible-content">
             <div id="itemList"><p style="color: #64748b;">עדיין לא הוספתם רכיבים לטיול.</p></div>
             <div id="listTotalSummary" style="font-size:0.85em; font-weight:bold; text-align:center; padding:6px; margin-bottom:10px;"></div>
@@ -608,7 +619,7 @@
         </div>
 
         <div class="card collapsed">
-            <h2 class="collapsible-header" onclick="toggleCard(this)">שלב 6: סריקת חשבונית להערכת החזר מס (Tax Free) 🧾<span class="toggle-arrow">▼</span></h2>
+            <h2 class="collapsible-header" onclick="toggleCard(this)"><span>שלב 6: סריקת חשבונית להערכת החזר מס (Tax Free) 🧾</span><span class="header-badges"><span id="invoiceCountBadge" class="header-count-badge" style="display:none;">0 נסרקו</span><span class="toggle-arrow">▼</span></span></h2>
             <div class="collapsible-content">
             <p class="hint" style="margin-top:-6px;">צלמו או העלו חשבונית/קבלה - הכלי יקרא את הטקסט מהתמונה (OCR חינמי, רץ בדפדפן) ויעריך החזר מס לפי טבלת שיעורי מע"מ קבועה.</p>
             <div class="invoice-disclaimer" style="margin-bottom:12px;">ℹ️ זו גרסה חינמית שרצה כולה בדפדפן (בלי לשלוח שום מידע לשרת חיצוני) - עובדת גם באתר החי וגם כאן בצ'אט. הדיוק תלוי באיכות התמונה ובעדכניות טבלת המע"מ הפנימית - תמיד אפשר לתקן ידנית את הסכום שזוהה לפני החישוב.</div>
@@ -1053,6 +1064,23 @@
         `;
 
         fileInput.value = '';
+
+        scannedInvoicesCount += 1;
+        try { localStorage.setItem('my_trip_invoice_count', String(scannedInvoicesCount)); } catch (e) {}
+        updateInvoiceCountBadge();
+    }
+
+    let scannedInvoicesCount = 0;
+
+    function updateInvoiceCountBadge() {
+        const badge = document.getElementById('invoiceCountBadge');
+        if (!badge) return;
+        if (scannedInvoicesCount > 0) {
+            badge.style.display = 'inline-block';
+            badge.innerText = `${scannedInvoicesCount} נסרקו`;
+        } else {
+            badge.style.display = 'none';
+        }
     }
 
     const REFUND_STEPS_BY_LANG = {
@@ -1302,6 +1330,11 @@
         const summaryEl = document.getElementById('listTotalSummary');
         if (summaryEl) {
             summaryEl.innerText = items.length > 0 ? `סה"כ עד כה: ${symbol}${used}` : '';
+        }
+
+        const itemsBadge = document.getElementById('itemsCountBadge');
+        if (itemsBadge) {
+            itemsBadge.innerText = items.length === 0 ? 'ריק' : `${items.length} פריטים`;
         }
     }
 
@@ -1895,6 +1928,12 @@
     document.getElementById('invoiceLang').addEventListener('change', () => {
         showCountryQuickInfo(document.getElementById('destination').value.trim());
     });
+
+    try {
+        const savedCount = parseInt(localStorage.getItem('my_trip_invoice_count'));
+        if (!isNaN(savedCount)) scannedInvoicesCount = savedCount;
+    } catch (e) {}
+    updateInvoiceCountBadge();
 
     previousMainCurrency = getMainSymbol();
     loadSavedUser();
