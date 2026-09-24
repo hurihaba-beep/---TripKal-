@@ -1,0 +1,128 @@
+<!--
+  FLIGHT HUNTER — "AI Summary" patch
+  ===================================
+  Adds a "🤖 סכם לי מה הכי כדאי" button that appears after a search finishes,
+  and a popup showing Claude's recommendation. On-demand only — never fires
+  automatically, so it never costs money unless someone clicks it.
+
+  WHERE TO ADD EACH PIECE (search your existing index.html for these anchors):
+-->
+
+<!-- 1) CSS — paste anywhere inside your existing <style> block -->
+<style>
+  #ai-summary-btn{
+    background:linear-gradient(180deg, #7c5cff, #5b3df0);color:#fff;border:none;
+    padding:10px 18px;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;
+    font-family:'Heebo',sans-serif;margin-top:14px;display:none;
+    box-shadow:0 3px 10px -3px rgba(91,61,240,0.5);
+  }
+  #ai-summary-btn:hover{transform:translateY(-1px);}
+  #ai-summary-btn:disabled{opacity:0.6;cursor:wait;}
+  #ai-summary-overlay{
+    position:fixed;inset:0;background:rgba(20,15,5,0.55);z-index:2100;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  #ai-summary-overlay.open{display:flex;}
+  #ai-summary-box{
+    background:#ffffff;border-radius:16px;max-width:480px;width:100%;
+    padding:26px 24px;box-shadow:0 20px 50px -12px rgba(0,0,0,0.4);
+    border:2px solid #7c5cff;
+  }
+  #ai-summary-box h3{margin:0 0 12px;font-size:17px;color:#3a2a80;display:flex;align-items:center;gap:8px;}
+  #ai-summary-text{font-size:14.5px;line-height:1.7;color:var(--paper);white-space:pre-wrap;}
+  #ai-summary-close{
+    margin-top:18px;background:#7c5cff;color:#fff;border:none;border-radius:8px;
+    padding:9px 18px;font-weight:700;cursor:pointer;width:100%;font-family:'Heebo',sans-serif;
+  }
+</style>
+
+<!-- 2) BUTTON — paste right after the closing </div> of #results
+       (i.e. right after: <div id="results"></div>   inside section#... ) -->
+<button type="button" id="ai-summary-btn">🤖 סכם לי מה הכי כדאי</button>
+
+<!-- 3) POPUP — paste anywhere near the end of <body>, alongside your other overlays -->
+<div id="ai-summary-overlay">
+  <div id="ai-summary-box">
+    <h3>🤖 מה הכי כדאי לבחור</h3>
+    <div id="ai-summary-text">טוען...</div>
+    <button type="button" id="ai-summary-close">סגור</button>
+  </div>
+</div>
+
+<!--
+  4) JS — paste inside your main IIFE, anywhere after `resultsEl`,
+     `BACKEND_URL`, `formatPrice`, and the runScan()/addResultReal() code
+     are already defined (i.e. near the bottom, after runScan is declared).
+-->
+<script>
+(function(){
+  "use strict";
+
+  // Keeps the last scan's raw offers + context around so the AI button can
+  // send them without re-fetching anything. Populate this at the end of
+  // your existing runScan() (see note below).
+  window.__lastSearchContext = null;
+
+  const aiBtn = document.getElementById("ai-summary-btn");
+  const aiOverlay = document.getElementById("ai-summary-overlay");
+  const aiText = document.getElementById("ai-summary-text");
+
+  document.getElementById("ai-summary-close").addEventListener("click", function(){
+    aiOverlay.classList.remove("open");
+  });
+
+  aiBtn.addEventListener("click", async function(){
+    const ctx = window.__lastSearchContext;
+    if(!ctx || !ctx.offers || ctx.offers.length === 0) return;
+
+    aiBtn.disabled = true;
+    const originalLabel = aiBtn.textContent;
+    aiBtn.textContent = "חושב...";
+    aiOverlay.classList.add("open");
+    aiText.textContent = "טוען...";
+
+    try{
+      const res = await fetch(`${BACKEND_URL}/api/ai-summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origin: ctx.origin,
+          destination: ctx.destination,
+          currency: ctx.currency,
+          budget: ctx.budget,
+          offers: ctx.offers,
+          travelpayoutsReference: ctx.travelpayoutsReference,
+        }),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        aiText.textContent = res.status === 503
+          ? "התכונה הזו עדיין לא מוגדרת בשרת (ANTHROPIC_API_KEY חסר)."
+          : ("שגיאה: " + (data.error || "לא ידועה"));
+      } else {
+        aiText.textContent = data.summary;
+      }
+    } catch(err){
+      aiText.textContent = "שגיאת חיבור: " + err.message;
+    } finally {
+      aiBtn.disabled = false;
+      aiBtn.textContent = originalLabel;
+    }
+  });
+})();
+</script>
+
+<!--
+  5) ONE SMALL EDIT to your EXISTING runScan() function:
+     Right after the line that does:
+         offersWithPrice.slice(0,8).forEach(({offer, price})=>{
+             addResultReal(dest, offer, price, base, baggageLabel, iata, tpRefByDate, budgetUSD, "exact");
+         });
+     add these two lines so the button knows what to summarize and becomes visible:
+
+         window.__lastSearchContext = {
+           origin: originName, destination: dest, currency: currentCurrency,
+           budget: budgetUSD, offers: offers, travelpayoutsReference: tpRef,
+         };
+         document.getElementById("ai-summary-btn").style.display = offers.length ? "block" : "none";
+-->
