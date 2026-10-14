@@ -123,6 +123,8 @@
             background: #fff; color: #1d4ed8; padding: 4px 14px; border-radius: 20px;
             font-weight: 800; font-size: 12.5px; white-space: nowrap;
         }
+        #partner-banner .family-row{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;justify-content:center;color:#fff;font-weight:800;font-size:13.5px;text-align:center}
+        #partner-banner .family-row a{display:inline-flex}
         #partner-banner-close {
             position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
             background: none; border: none; color: #fff; font-size: 22px; cursor: pointer;
@@ -165,12 +167,13 @@
 <!-- Partner banner → Flight Hunter -->
 <div id="partner-banner">
     <button type="button" id="partner-banner-close" aria-label="סגור באנר" title="סגור">×</button>
-    <a href="https://flight-hunter-frontend.onrender.com/" target="_blank" rel="noopener noreferrer">
-        ✈️ עוד אתר מהמשפחה שלנו: <b>Flight Hunter</b> — חיפוש טיסות זולות, מעקב מחירים בזמן אמת והתראות על דילים
-        <span class="partner-cta">כניסה ל-Flight Hunter ↗</span>
-    </a>
+    <div class="family-row">
+        <span>✈️ עוד אתרים מהמשפחה שלנו:</span>
+        <a href="https://flight-hunter-frontend.onrender.com/" target="_blank" rel="noopener noreferrer"><span class="partner-cta">Flight Hunter · טיסות זולות ↗</span></a>
+        <a href="https://masloul.vercel.app/" target="_blank" rel="noopener noreferrer"><span class="partner-cta">מסלול · מתכנן טיולים עם AI ↗</span></a>
+    </div>
 </div>
-<button type="button" id="partner-banner-restore" title="הצג שוב את הבאנר">✈️ Flight Hunter</button>
+<button type="button" id="partner-banner-restore" title="הצג שוב את הבאנר">✈️ אתרי המשפחה</button>
 
 <!-- Beautiful TripKal logo (GH monogram as golden lion — family brand) -->
 <div id="site-logo-wrap">
